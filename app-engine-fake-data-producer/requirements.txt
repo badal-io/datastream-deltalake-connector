@@ -1,0 +1,14 @@
+#alembic
+Flask==1.1.4
+SQLAlchemy==1.4.11
+PyMySQL==1.0.2
+faker
+# werkzeug
+#psycopg2
+#psycopg2-binary
+# coverage
+# Django==1.5
+# django-nose
+# mock
+# mock-django
+# MySQL-python

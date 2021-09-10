@@ -34,7 +34,7 @@ case class MergeQueries(settings: MergeSettings) {
     val updateExp = toFieldMap(payloadFields, "t", "s.payload")
       targetTable.as("t")
         .merge(
-          latestChangeForEachKey.as("s"), s"t.${idColName} = s.payload.$idColName"
+          latestChangeForEachKey.as("s"), s"t.${idColName} = s.payload.${idColName}"
         )
         .whenMatched("s.source_metadata.change_type = 'DELETE'").delete()
         .whenMatched().updateExpr(updateExp)
@@ -48,7 +48,7 @@ case class MergeQueries(settings: MergeSettings) {
       .drop("row_num" )
 
   private lazy val window =
-    Window.partitionBy(idColName).orderBy(desc(tsColName))
+    Window.partitionBy(s"payload.${idColName}").orderBy(desc(tsColName))
 
 
   private def toFieldMap(fields: Seq[String], targetTable: String, srcTable: String): Map[String, String] =

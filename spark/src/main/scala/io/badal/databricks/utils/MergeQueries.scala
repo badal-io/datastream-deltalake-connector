@@ -29,7 +29,7 @@ case class MergeQueries(settings: MergeSettings) {
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
     /** First update the schema of the target table*/
-    val targetTable= DeltaSchemaMigration.updateSchema(targetTableName,microBatchOutputDF.schema)
+    val targetTable= DeltaSchemaMigration.updateSchema(targetTableName,microBatchOutputDF.select("payload.*").schema)
 
     val updateExp = toFieldMap(payloadFields, "t", "s.payload")
       targetTable.as("t")
@@ -52,5 +52,6 @@ case class MergeQueries(settings: MergeSettings) {
 
 
   private def toFieldMap(fields: Seq[String], targetTable: String, srcTable: String): Map[String, String] =
-    fields.map(f => (f"${targetTable}.$f" -> f"${srcTable}.$f")).toMap
+    //fields.map(f => (f"${targetTable}.$f" -> f"${srcTable}.$f")).toMap
+      fields.map(f => (f"$f" -> f"${srcTable}.$f")).toMap
 }

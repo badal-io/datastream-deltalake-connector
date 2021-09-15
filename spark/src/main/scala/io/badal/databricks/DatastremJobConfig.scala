@@ -1,7 +1,7 @@
 package io.badal.databricks
 import com.google.api.client.util.DateTime
 
-case class DatastremJobConfig(
+final case class DatastremJobConfig(
     inputBucket: String,
     dataStreamName: String,
     startDateTime: DateTime,
@@ -9,4 +9,3 @@ case class DatastremJobConfig(
     targetTableNamePrefix: String,
     mergeFrequencyMinutes: Int
 )
-

@@ -1,18 +1,35 @@
+import Versions._
+
 name := "datastream-databricks-connector"
 scalaVersion := "2.12.10"
 
 fork in Test := true
 
-val SPARK_VERSION = "3.1.1"
-val DELTA_VERSION = "0.8.0"
 
+libraryDependencies ++= Seq(
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "org.apache.spark" %% "spark-sql" % Versions.Spark,
+  "org.apache.spark" %% "spark-hive" % "1.5.0",
+  "org.apache.spark" %% "spark-hive-thriftserver" % "2.4.1",
+  "org.apache.spark" %% "spark-streaming" % Versions.Spark,
+  "org.apache.spark" %% "spark-sql" % Versions.Spark,
+  "org.apache.spark" %% "spark-streaming" % Versions.Spark,
+  "com.google.http-client" % "google-http-client" % "1.39.2",
+  "io.delta" %% "delta-core" % Versions.Delta,
+)
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
-libraryDependencies += "org.apache.spark" %% "spark-sql" % SPARK_VERSION
-//libraryDependencies += "org.apache.spark" %% "spark-hive" % "1.5.0"
-//libraryDependencies += "org.apache.spark" %% "spark-hive-thriftserver" % "2.4.1"
-libraryDependencies += "org.apache.spark" %% "spark-streaming" % SPARK_VERSION
-libraryDependencies += "org.apache.spark" %% "spark-sql" % SPARK_VERSION
-libraryDependencies += "org.apache.spark" %% "spark-streaming" % SPARK_VERSION
-libraryDependencies += "com.google.http-client" % "google-http-client" % "1.39.2"
-libraryDependencies += "io.delta" %% "delta-core" % DELTA_VERSION
+lazy val commonScalacOptions = Seq(
+  "-deprecation",
+  "-encoding",
+  "UTF-8",
+  "-feature",
+  "-unchecked",
+  "-language:implicitConversions",
+  "-language:postfixOps",
+  "-Xlint:_,-missing-interpolator",
+  "-Xfatal-warnings",
+  "-Xmacro-settings:materialize-derivations",
+  "-Yno-adapted-args",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-value-discard"
+)

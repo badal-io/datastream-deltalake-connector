@@ -4,18 +4,23 @@ import org.apache.spark.sql.SparkSession
 
 trait TableProvider {
   def getTablesFromSource(inputBucket: String): Seq[String]
-  def getAllTablesToMerge(inputBucket: String, tables: Option[Seq[String]])(implicit ss: SparkSession): Seq[MergeSettings] = {
+
+  def getAllTablesToMerge(inputBucket: String, tables: Option[Seq[String]])(
+      implicit ss: SparkSession): Seq[MergeSettings] = {
     val tableList = tables match {
-      case Some(tables) =>  tables
+      case Some(tables) => tables
       case None         => getTablesFromSource(inputBucket)
     }
     tableList.map { table =>
-      MergeSettings(targetTableName = table, idColName = "id", tsColName = DataStreamSchema.SOURCE_TIMESTAMP_FIELD, spark = ss)
+      MergeSettings(targetTableName = table,
+                    idColName = "id",
+                    tsColName = DataStreamSchema.SOURCE_TIMESTAMP_FIELD,
+                    spark = ss)
     }
   }
 
-
-  private def avroFilePaths(inputBucket: String, tables: Option[Seq[String]]): String= {
+  private def avroFilePaths(inputBucket: String,
+                            tables: Option[Seq[String]]): String = {
     // TODO: demo_inventory.voters/*/*/*/*/*
     tables match {
       case None => s"gs://$inputBucket"

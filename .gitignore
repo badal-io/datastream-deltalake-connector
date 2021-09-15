@@ -1,2 +1,6 @@
 *.class
 *.log
+./spark/.idea
+.idea
+./spark/target
+./target

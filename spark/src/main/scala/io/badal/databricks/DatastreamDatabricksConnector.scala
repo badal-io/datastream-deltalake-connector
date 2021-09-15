@@ -14,7 +14,7 @@ object DatastreamDatabricksConnector {
     Logger.getRootLogger.setLevel(Level.ERROR)
 
     val jobConfig = DatastremJobConfig(
-      inputBucket= "sandbox-databricks-datastream-connector-sink/demo1",
+      inputBucket= "sandbox-databricks-datastream-connector-sink/demo1/demo_inventory.voters/*/*/*/*/*",
       dataStreamName = "",
       startDateTime =  DateTime.parseRfc3339("1970-01-01T00:00:00.00Z"),
       fileReadConcurrency = 2,
@@ -33,9 +33,10 @@ object DatastreamDatabricksConnector {
     /** Get a streaming Dataframe of Datastream records*/
     val inputDf = DatastreamIO(spark, jobConfig.inputBucket, jobConfig.fileReadConcurrency)
 
-    val table = DeltaTable.forName("target")
-
-    val mergeSettings: MergeQueries = MergeQueries(MergeSettings(table, ))
+    //val table = DeltaTable.forName("target")
+    val table = "voters"
+    
+    val mergeSettings: MergeQueries = MergeQueries(MergeSettings(table, "id","source_timestamp",spark))
 
     /** Merge into target table*/
     val query = inputDf.writeStream

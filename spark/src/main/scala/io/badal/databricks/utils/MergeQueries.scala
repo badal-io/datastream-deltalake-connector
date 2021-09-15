@@ -29,12 +29,12 @@ case class MergeQueries(settings: MergeSettings) {
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
     /** First update the schema of the target table*/
-    val targetTable= DeltaSchemaMigration.updateSchema(targetTableName,microBatchOutputDF.schema)
+    val targetTable= DeltaSchemaMigration.updateSchema(targetTableName,microBatchOutputDF.select("payload.*").schema)
 
     val updateExp = toFieldMap(payloadFields, "t", "s.payload")
       targetTable.as("t")
         .merge(
-          latestChangeForEachKey.as("s"), s"t.${idColName} = s.payload.$idColName"
+          latestChangeForEachKey.as("s"), s"t.${idColName} = s.payload.${idColName}"
         )
         .whenMatched("s.source_metadata.change_type = 'DELETE'").delete()
         .whenMatched().updateExpr(updateExp)
@@ -48,9 +48,11 @@ case class MergeQueries(settings: MergeSettings) {
       .drop("row_num" )
 
   private lazy val window =
-    Window.partitionBy(idColName).orderBy(desc(tsColName))
+    Window.partitionBy(s"payload.${idColName}").orderBy(desc(tsColName))
 
 
   private def toFieldMap(fields: Seq[String], targetTable: String, srcTable: String): Map[String, String] =
-    fields.map(f => (f"${targetTable}.$f" -> f"${srcTable}.$f")).toMap
+    //fields.map(f => (f"${targetTable}.$f" -> f"${srcTable}.$f")).toMap
+    //fields.map(f => (f"$f" -> f"${srcTable}.$f")).toMap
+      fields.map(field => (s"$field" -> s"$srcTable.$field")).toMap
 }

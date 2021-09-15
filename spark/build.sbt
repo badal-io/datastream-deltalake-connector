@@ -15,5 +15,5 @@ libraryDependencies += "org.apache.spark" %% "spark-streaming" % SPARK_VERSION
 libraryDependencies += "org.apache.spark" %% "spark-sql" % SPARK_VERSION
 libraryDependencies += "org.apache.spark" %% "spark-streaming" % SPARK_VERSION
 //libraryDependencies += "com.google.http-client" % "google-http-client" % "1.39.2"
-libraryDependencies += "com.google.http-client" % "google-http-client-test" % "1.40.0" % Test
+libraryDependencies += "com.google.http-client" % "google-http-client" % "1.40.0" 
 libraryDependencies += "io.delta" %% "delta-core" % DELTA_VERSION

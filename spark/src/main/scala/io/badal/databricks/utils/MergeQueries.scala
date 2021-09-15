@@ -53,5 +53,6 @@ case class MergeQueries(settings: MergeSettings) {
 
   private def toFieldMap(fields: Seq[String], targetTable: String, srcTable: String): Map[String, String] =
     //fields.map(f => (f"${targetTable}.$f" -> f"${srcTable}.$f")).toMap
-      fields.map(f => (f"$f" -> f"${srcTable}.$f")).toMap
+    //fields.map(f => (f"$f" -> f"${srcTable}.$f")).toMap
+      fields.map(field => (s"$field" -> s"$srcTable.$field")).toMap
 }

@@ -5,7 +5,6 @@ scalaVersion := "2.12.10"
 
 fork in Test := true
 
-
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.apache.spark" %% "spark-sql" % Versions.Spark,
@@ -14,7 +13,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-streaming" % Versions.Spark,
   "org.apache.spark" %% "spark-sql" % Versions.Spark,
   "org.apache.spark" %% "spark-streaming" % Versions.Spark,
-  "com.google.http-client" % "google-http-client" % "1.39.2",
+  "com.google.http-client" % "google-http-client" % "1.40.0",
   "io.delta" %% "delta-core" % Versions.Delta,
 )
 

@@ -21,7 +21,7 @@ lazy val spark = Project(id = "spark", base = file("spark"))
   .settings(scalafmtSettings)
   .settings(assemblySettings)
   .enablePlugins(AssemblyPlugin)
-  .settings(name := "spark")
+  .settings(name := "datastream-deltalake-spark-connector")
 
 lazy val testSettings = Seq(
   fork in Test := true,
@@ -46,7 +46,7 @@ lazy val commonScalacOptions = Seq(
 )
 
 lazy val assemblySettings = Seq(
-  assemblyJarName in assembly := s"${name.value.toLowerCase}-assembly.jar",
+  assemblyJarName in assembly := s"${name.value.toLowerCase}-assembly-${version.value}.jar",
   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
   test in assembly := {},
 )

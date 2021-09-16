@@ -2,6 +2,6 @@
 
 ## Setup
 
-### Building Fat Jar
+### Building Fat Jar for the Spark connector
 
-`sbt clean assembly`
+`sbt "project spark-connector" clean assembly`

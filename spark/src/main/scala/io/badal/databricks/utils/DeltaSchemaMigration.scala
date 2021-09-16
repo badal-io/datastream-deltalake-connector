@@ -1,13 +1,7 @@
 package io.badal.databricks.utils
 
 import io.delta.tables.DeltaTable
-import org.apache.spark.sql.{
-  AnalysisException,
-  DataFrame,
-  Row,
-  SaveMode,
-  SparkSession
-}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import scala.util.Try

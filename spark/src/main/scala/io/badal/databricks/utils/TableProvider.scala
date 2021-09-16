@@ -14,7 +14,7 @@ trait TableProvider {
     tableList.map { table =>
       MergeSettings(targetTableName = table,
                     idColName = "id",
-                    tsColName = DataStreamSchema.SOURCE_TIMESTAMP_FIELD,
+                    tsColName = DataStreamSchema.SourceTimestampField,
                     spark = ss)
     }
   }

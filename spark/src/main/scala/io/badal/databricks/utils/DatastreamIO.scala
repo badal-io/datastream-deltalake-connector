@@ -1,6 +1,5 @@
 package io.badal.databricks.utils
 
-import org.apache.spark
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**

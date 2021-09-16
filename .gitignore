@@ -3,5 +3,6 @@
 .idea
 .bsp
 
-spark/target
-target/
+*/target/*
+*/target/**
+

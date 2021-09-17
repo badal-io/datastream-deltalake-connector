@@ -1,25 +1,25 @@
 package io.badal.databricks
 
 import com.google.api.client.util.DateTime
+import io.badal.databricks.config.Config.DatastreamJobConf
 import io.badal.databricks.utils.{DatastreamIO, MergeQueries, MergeSettings}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
+import pureconfig.ConfigSource
+
+/* Don't remove, Intellij thinks they are unused but they are required */
+import eu.timepit.refined.pureconfig._
+import pureconfig._
+import pureconfig.generic.auto._
 
 object DatastreamDatabricksConnector {
   def main(args: Array[String]): Unit = {
 
+    val jobConf: DatastreamJobConf =
+      ConfigSource.file("demo.conf").loadOrThrow[DatastreamJobConf]
+
     // TODO
     Logger.getRootLogger.setLevel(Level.ERROR)
-
-    val jobConfig = DatastremJobConfig(
-      inputBucket =
-        "sandbox-databricks-datastream-connector-sink/demo1/demo_inventory.voters/*/*/*/*/*",
-      dataStreamName = "",
-      startDateTime = DateTime.parseRfc3339("1970-01-01T00:00:00.00Z"),
-      fileReadConcurrency = 2,
-      targetTableNamePrefix = "test",
-      mergeFrequencyMinutes = 1
-    )
 
     /** Create a spark session */
     val spark = SparkSession.builder
@@ -27,15 +27,28 @@ object DatastreamDatabricksConnector {
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 
+    //    val table = DeltaTable.forName("target")
+
+    val table = jobConf.tables.toList match {
+      case hd :: _ => hd // todo: support multi table export
+      case _ =>
+        throw new IllegalArgumentException(
+          "At least one datastream table should be provided")
+    }
+
+    val bucket = s"${jobConf.datastream.bucket}/${table.name}/*/*/*/*/*"
+
     /** Get a streaming Dataframe of Datastream records*/
     val inputDf =
-      DatastreamIO(spark, jobConfig.inputBucket, jobConfig.fileReadConcurrency)
-
-    //val table = DeltaTable.forName("target")
-    val table = "voters"
+      DatastreamIO(spark, bucket, jobConf.datastream.fileReadConcurrency.value)
 
     val mergeSettings: MergeQueries = MergeQueries(
-      MergeSettings(table, "id", "source_timestamp", spark))
+      MergeSettings(
+        targetTableName = table.name.value,
+        idColName = table.primaryKey.value,
+        tsColName = table.timestamp.value,
+        spark = spark
+      ))
 
     /** Merge into target table*/
     val query = inputDf.writeStream

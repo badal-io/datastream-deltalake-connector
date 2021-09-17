@@ -29,9 +29,10 @@ object DatastreamDatabricksConnector {
 
     //    val table = DeltaTable.forName("target")
 
-    val table = jobConf.tables.toList match {
-      case hd :: _ => hd // todo: support multi table export
-      case _ =>
+    // todo: support multi table
+    val table = jobConf.tables.headOption match {
+      case Some(tableConf) => tableConf
+      case None =>
         throw new IllegalArgumentException(
           "At least one datastream table should be provided")
     }

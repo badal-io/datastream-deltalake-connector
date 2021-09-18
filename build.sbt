@@ -55,4 +55,7 @@ lazy val assemblySettings = Seq(
   assemblyJarName in assembly := s"${name.value.toLowerCase}-assembly-${version.value}.jar",
   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
   test in assembly := {},
+  assemblyShadeRules in assembly := Seq(
+    ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inAll
+  )
 )

@@ -16,7 +16,7 @@ object DatastreamDatabricksConnector {
   def main(args: Array[String]): Unit = {
 
     val jobConf: DatastreamJobConf =
-      ConfigSource.file("demo.conf").loadOrThrow[DatastreamJobConf]
+      ConfigSource.resources("demo.conf").loadOrThrow[DatastreamJobConf]
 
     // TODO
     Logger.getRootLogger.setLevel(Level.ERROR)

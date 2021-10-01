@@ -8,7 +8,7 @@ object DataStreamSchema {
   val SourceTimestampField = "source_timestamp"
 
   def registerIfNotExists(spark: SparkSession, database: String): Unit =
-    spark.sql(s"create database $database if not exists")
+    spark.sql(s"CREATE DATABASE IF NOT EXISTS $database")
 
   def payloadSchema(df: DataFrame): StructType =
     df.schema(PayloadField).dataType match {

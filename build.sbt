@@ -4,11 +4,17 @@ lazy val commonSettings = Seq(
   organization := "io.badal",
   organizationName := "badal.io",
   libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "eu.timepit" %% "refined" % Versions.Refined,
+    "eu.timepit" %% "refined-pureconfig" % Versions.Refined,
+    "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test",
     "org.apache.spark" %% "spark-sql" % Versions.Spark % Provided,
     "org.apache.spark" %% "spark-streaming" % Versions.Spark % Provided,
+    "com.github.pureconfig" %% "pureconfig" % Versions.PureConfig,
     "com.google.http-client" % "google-http-client" % "1.40.0",
+    "com.typesafe" % "config" % Versions.Typesafe,
     "io.delta" %% "delta-core" % Versions.Delta,
+  ),
+  resolvers ++= Seq(
   ),
 )
 
@@ -49,4 +55,7 @@ lazy val assemblySettings = Seq(
   assemblyJarName in assembly := s"${name.value.toLowerCase}-assembly-${version.value}.jar",
   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
   test in assembly := {},
+  assemblyShadeRules in assembly := Seq(
+    ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inAll
+  )
 )

@@ -1,8 +1,12 @@
 package io.badal.databricks
 
-import com.google.api.client.util.DateTime
 import io.badal.databricks.config.Config.DatastreamJobConf
-import io.badal.databricks.utils.{DatastreamIO, MergeQueries, MergeSettings}
+import io.badal.databricks.utils.{
+  DataStreamSchema,
+  DatastreamIO,
+  MergeQueries,
+  MergeSettings
+}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import pureconfig.ConfigSource
@@ -27,7 +31,8 @@ object DatastreamDatabricksConnector {
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 
-    //    val table = DeltaTable.forName("target")
+    DataStreamSchema.registerIfNotExists(spark,
+                                         jobConf.datastream.database.value)
 
     // todo: support multi table
     val table = jobConf.tables.headOption match {
@@ -37,7 +42,7 @@ object DatastreamDatabricksConnector {
           "At least one datastream table should be provided")
     }
 
-    val bucket = s"${jobConf.datastream.bucket}/${table.name}/*/*/*/*/*"
+    val bucket = s"${jobConf.path(table.name.value)}/*/*/*/*/*"
 
     /** Get a streaming Dataframe of Datastream records*/
     val inputDf =

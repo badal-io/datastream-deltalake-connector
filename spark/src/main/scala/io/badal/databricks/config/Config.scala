@@ -9,11 +9,15 @@ object Config {
       datastream: DatastreamConf,
       tables: Seq[TableConf],
       deltalake: DeltalakeConf
-  )
+  ) {
+    def path(table: String): String =
+      s"${datastream.bucket.value}/${datastream.database.value}.$table"
+  }
 
   final case class DatastreamConf(
       name: NonEmptyString,
       bucket: NonEmptyString,
+      database: NonEmptyString,
       startDate: Option[NonEmptyString],
       fileReadConcurrency: PosInt
   )

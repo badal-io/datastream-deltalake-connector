@@ -18,6 +18,7 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
   val datastream = DatastreamConf(
     name = NonEmptyString.unsafeFrom("test-name"),
     bucket = NonEmptyString.unsafeFrom("test-bucket"),
+    database = NonEmptyString.unsafeFrom("test-database"),
     startDate = Option(NonEmptyString.unsafeFrom("1970-01-01T00:00:00.00Z")),
     fileReadConcurrency = PosInt.unsafeFrom(2)
   )
@@ -39,5 +40,9 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
   "reading a DatastreamJobConf" should "return a DatastreamJobConf for a valid typesafe configuration" in {
     val res = ConfigSource.resources("test.conf").load[DatastreamJobConf]
     res.right.value should be(validConf)
+  }
+
+  "path" should "return the correct path with respect to the bucket, database, and provided table" in {
+    validConf.path("test-table") should be("test-bucket/test-database.test-table")
   }
 }

@@ -18,7 +18,6 @@ import pureconfig.generic.auto._
 
 object DatastreamDatabricksConnector {
   def main(args: Array[String]): Unit = {
-
     val jobConf: DatastreamJobConf =
       ConfigSource.resources("demo.conf").loadOrThrow[DatastreamJobConf]
 
@@ -28,6 +27,7 @@ object DatastreamDatabricksConnector {
     /** Create a spark session */
     val spark = SparkSession.builder
       .appName("DatastreamReader")
+      //.config("spark.master", "local")
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 

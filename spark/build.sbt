@@ -3,7 +3,10 @@ import sbt.Keys.libraryDependencies
 lazy val commonSettings = Seq(
   organization := "io.badal",
   organizationName := "badal.io",
-  libraryDependencies ++= Seq(
+  mainClass := Some("io.badal.databricks.DatastreamDatabricksConnector"),
+ // unmanagedBase := new java.io.File("/usr/local/lib/python3.8/site-packages/pyspark/jars"),
+
+    libraryDependencies ++= Seq(
     "eu.timepit" %% "refined" % Versions.Refined,
     "eu.timepit" %% "refined-pureconfig" % Versions.Refined,
     "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test",
@@ -19,15 +22,20 @@ lazy val commonSettings = Seq(
 )
 
 lazy val root = Project(id = "datastream-deltalake-connector", base = file("."))
-  .aggregate(spark)
-
-lazy val spark = Project(id = "spark", base = file("spark"))
   .settings(commonSettings)
   .settings(testSettings)
   .settings(scalafmtSettings)
   .settings(assemblySettings)
   .enablePlugins(AssemblyPlugin)
-  .settings(name := "datastream-deltalake-spark-connector")
+  //.aggregate(spark)
+
+//lazy val spark = Project(id = "spark", base = file("spark"))
+//  .settings(commonSettings)
+//  .settings(testSettings)
+//  .settings(scalafmtSettings)
+//  .settings(assemblySettings)
+//  .enablePlugins(AssemblyPlugin)
+//  .settings(name := "datastream-deltalake-spark-connector")
 
 lazy val testSettings = Seq(
   fork in Test := true,

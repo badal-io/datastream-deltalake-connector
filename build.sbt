@@ -6,13 +6,18 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "eu.timepit" %% "refined" % Versions.Refined,
     "eu.timepit" %% "refined-pureconfig" % Versions.Refined,
-    "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test",
     "org.apache.spark" %% "spark-sql" % Versions.Spark % Provided,
+    "org.apache.spark" %% "spark-core" % Versions.Spark % Provided,
     "org.apache.spark" %% "spark-streaming" % Versions.Spark % Provided,
     "com.github.pureconfig" %% "pureconfig" % Versions.PureConfig,
     "com.google.http-client" % "google-http-client" % "1.40.0",
     "com.typesafe" % "config" % Versions.Typesafe,
     "io.delta" %% "delta-core" % Versions.Delta,
+    "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test",
+    "org.apache.spark" %% "spark-sql" % Versions.Spark  % Test classifier "tests",
+    "org.apache.spark" %% "spark-catalyst" % Versions.Spark  % Test classifier "tests",
+    "org.apache.spark" %% "spark-core" % Versions.Spark  % Test classifier "tests",
+    "org.apache.spark" %% "spark-hive" % Versions.Spark  % Test classifier "tests"
   ),
   resolvers ++= Seq(
   ),
@@ -27,7 +32,10 @@ lazy val spark = Project(id = "spark", base = file("spark"))
   .settings(scalafmtSettings)
   .settings(assemblySettings)
   .enablePlugins(AssemblyPlugin)
-  .settings(name := "datastream-deltalake-spark-connector")
+  .settings(name := "datastream-deltalake-spark-connector",
+    scalaSource in Test := baseDirectory.value / "src/test/scala",
+    scalaSource in Compile := baseDirectory.value / "src/main/scala"
+  )
 
 lazy val testSettings = Seq(
   fork in Test := true,

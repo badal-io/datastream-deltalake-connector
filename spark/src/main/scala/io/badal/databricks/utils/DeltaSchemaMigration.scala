@@ -25,14 +25,15 @@ object DeltaSchemaMigration {
     * */
   def updateSchema(tableName: String, sourceSchema: StructType)(
       implicit spark: SparkSession): DeltaTable = {
-    val emptyDF =
+   //TODO
+    /* val emptyDF =
       spark.createDataFrame(spark.sparkContext.emptyRDD[Row], sourceSchema)
     emptyDF.write
       .option("mergeSchema", "true")
       .format("delta")
       .mode(SaveMode.Append)
       .saveAsTable(tableName)
-
+*/
     DeltaTable.forName(tableName)
 
   }

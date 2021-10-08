@@ -1,20 +1,25 @@
 package io.badal.databricks.utils
 
 import java.io.{File, IOException}
+import java.net.URL
 import java.util.{Locale, UUID}
 
 import org.scalatest.BeforeAndAfterEach
-import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession}
-import org.apache.spark.sql.{AnalysisException, DataFrame, QueryTest, Row}
+import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession, TestSparkSession}
+import org.apache.spark.sql.{AnalysisException, DataFrame, QueryTest, Row, SparkSession}
 import DirTestUtils._
-class MergeQueriesSpec
-    extends QueryTest
-    with BeforeAndAfterEach
-    with SharedSparkSession {
-  import testImplicits._
-  protected var tempDir: File = _
+import io.delta.tables.DeltaTable
+import org.apache.spark.sql.delta.catalog.DeltaCatalog
+import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
+import org.apache.spark.sql.internal.SQLConf
 
-  protected def tempPath: String = tempDir.getCanonicalPath
+import scala.io.Source
+class MergeQueriesSpec
+    extends MergeIntoSuiteBase
+    with BeforeAndAfterEach
+    with DeltaSQLCommandTest
+{
+  import testImplicits._
 
   override def beforeEach() {
     super.beforeEach()
@@ -30,6 +35,7 @@ class MergeQueriesSpec
   }
   test("basic scala API") {
     withTable("source") {
+
       append(Seq((1, 10), (2, 20)).toDF("key1", "value1"), Nil) // target
       val source = Seq((1, 100), (3, 30)).toDF("key2", "value2") // source
 
@@ -47,6 +53,35 @@ class MergeQueriesSpec
                     Row(2, 20) :: // No change
                     Row(3, 30) :: // Insert
                     Nil)
+    }
+  }
+
+  test("upsert to an empty table") {
+    val mergeSettings = MergeSettings(
+      targetTableName = "target",
+      primaryKeyFields = Seq("id"),
+      orderByFields = Seq("source_timestamp")
+    )
+    withTable("target") {
+      withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
+
+        val sourceDf = spark.read.option("multiline", "true").json(getClass.getResource("/events/records1.json").toString)
+
+        val emptyDF =
+          spark.createDataFrame(spark.sparkContext.emptyRDD[Row], DataStreamSchema.payloadSchema(sourceDf))
+
+        emptyDF.write.format("delta").saveAsTable("target")
+
+        DeltaTable.forName("target")
+
+        MergeQueries(mergeSettings).upsertToDelta(sourceDf, 1)
+
+        checkAnswer(readDeltaTable(tempPath),
+          Row(1, 100) :: // Update
+            Row(2, 20) :: // No change
+            Row(3, 30) :: // Insert
+            Nil)
+      }
     }
   }
 

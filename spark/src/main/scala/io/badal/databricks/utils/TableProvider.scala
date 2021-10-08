@@ -18,7 +18,6 @@ trait TableProvider {
         orderByFields = Seq.empty,
         //idColName = "id",
         //tsColName = DataStreamSchema.SourceTimestampField,
-        spark = ss
       )
     }
   }

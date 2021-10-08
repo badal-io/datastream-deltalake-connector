@@ -55,7 +55,6 @@ object DatastreamDatabricksConnector {
         orderByFields = Seq.empty,
         //idColName = table.primaryKey.value,
         //tsColName = table.timestamp.value,
-        spark = spark
       ))
 
     /** Merge into target table*/

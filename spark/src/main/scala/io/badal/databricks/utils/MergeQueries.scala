@@ -10,12 +10,10 @@ import org.apache.spark.sql.functions.{desc, row_number}
 
 case class MergeSettings(targetTableName: String,
                          primaryKeyFields: Seq[String],
-                         orderByFields: Seq[String],
-                         spark: SparkSession)
+                         orderByFields: Seq[String])
 
 case class MergeQueries(settings: MergeSettings) {
   import settings._
-  implicit val ss = spark
 
   /**
     * Upsert a batch of updates to a Delta Table
@@ -32,6 +30,7 @@ case class MergeQueries(settings: MergeSettings) {
     */
   def upsertToDelta(microBatchOutputDF: DataFrame, batchId: Long): Unit = {
 
+    implicit val ss = microBatchOutputDF.sparkSession
     val targetTableAlias = "t"
     val srcPayloadTableAlias = "s.payload"
     val payloadFields: Array[String] =

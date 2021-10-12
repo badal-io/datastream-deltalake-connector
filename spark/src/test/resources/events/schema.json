@@ -1,0 +1,137 @@
+{
+  "type": "struct",
+  "fields": [
+    {
+      "name": "uuid",
+      "type": "string",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "read_timestamp",
+      "type": "timestamp",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "source_timestamp",
+      "type": "timestamp",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "object",
+      "type": "string",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "read_method",
+      "type": "string",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "stream_name",
+      "type": "string",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "schema_key",
+      "type": "string",
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "source_metadata",
+      "type": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "table",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "database",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "primary_keys",
+            "type": {
+              "type": "array",
+              "elementType": "string",
+              "containsNull": true
+            },
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "log_file",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "log_position",
+            "type": "long",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "change_type",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "is_deleted",
+            "type": "boolean",
+            "nullable": true,
+            "metadata": {}
+          }
+        ]
+      },
+      "nullable": true,
+      "metadata": {}
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "address",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          },
+          {
+            "name": "gender",
+            "type": "string",
+            "nullable": true,
+            "metadata": {}
+          }
+        ]
+      },
+      "nullable": true,
+      "metadata": {}
+    }
+  ]
+}

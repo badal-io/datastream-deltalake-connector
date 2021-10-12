@@ -12,10 +12,13 @@ trait TableProvider {
       case None         => getTablesFromSource(inputBucket)
     }
     tableList.map { table =>
-      MergeSettings(targetTableName = table,
-                    idColName = "id",
-                    tsColName = DataStreamSchema.SourceTimestampField,
-                    spark = ss)
+      MergeSettings(
+        targetTableName = table,
+        primaryKeyFields = Seq.empty, //TODO
+        orderByFields = Seq.empty,
+        //idColName = "id",
+        //tsColName = DataStreamSchema.SourceTimestampField,
+      )
     }
   }
 

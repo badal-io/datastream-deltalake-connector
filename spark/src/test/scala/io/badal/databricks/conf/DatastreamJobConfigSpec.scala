@@ -2,7 +2,12 @@ package io.badal.databricks.conf
 
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import io.badal.databricks.config.Config.{DatastreamConf, DatastreamJobConf, DeltalakeConf, TableConf}
+import io.badal.databricks.config.Config.{
+  DatastreamConf,
+  DatastreamJobConf,
+  DeltalakeConf,
+  TableConf
+}
 import org.scalatest.EitherValues._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -24,10 +29,9 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
   )
 
   val tables = Seq(
-    TableConf(
-      name = NonEmptyString.unsafeFrom("test-table"),
-      primaryKey = NonEmptyString.unsafeFrom("test-key"),
-      timestamp = NonEmptyString.unsafeFrom("test-timestamp"))
+    TableConf(name = NonEmptyString.unsafeFrom("test-table"),
+              primaryKey = NonEmptyString.unsafeFrom("test-key"),
+              timestamp = NonEmptyString.unsafeFrom("test-timestamp"))
   )
 
   val deltalake = DeltalakeConf(
@@ -43,6 +47,7 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
   }
 
   "path" should "return the correct path with respect to the bucket, database, and provided table" in {
-    validConf.path("test-table") should be("test-bucket/test-database.test-table")
+    validConf.path("test-table") should be(
+      "test-bucket/test-database.test-table")
   }
 }

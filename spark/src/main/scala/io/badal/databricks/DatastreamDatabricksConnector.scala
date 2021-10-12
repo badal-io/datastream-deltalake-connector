@@ -51,9 +51,10 @@ object DatastreamDatabricksConnector {
     val mergeSettings: MergeQueries = MergeQueries(
       MergeSettings(
         targetTableName = table.name.value,
-        idColName = table.primaryKey.value,
-        tsColName = table.timestamp.value,
-        spark = spark
+        primaryKeyFields = Seq.empty, //TODO
+        orderByFields = Seq.empty,
+        //idColName = table.primaryKey.value,
+        //tsColName = table.timestamp.value,
       ))
 
     /** Merge into target table*/

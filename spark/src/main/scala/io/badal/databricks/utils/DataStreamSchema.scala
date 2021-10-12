@@ -17,4 +17,5 @@ object DataStreamSchema {
     }
 
   def payloadFields(df: DataFrame): Array[String] = payloadSchema(df).fieldNames
+
 }

@@ -1,6 +1,6 @@
 package io.badal.databricks
 
-import io.badal.databricks.config.Config.DatastreamJobConf
+import io.badal.databricks.config.DatastreamJobConf
 import io.badal.databricks.utils.{
   DataStreamSchema,
   DatastreamIO,
@@ -17,6 +17,7 @@ import pureconfig._
 import pureconfig.generic.auto._
 
 object DatastreamDatabricksConnector {
+
   def main(args: Array[String]): Unit = {
 
     val jobConf: DatastreamJobConf =
@@ -31,30 +32,33 @@ object DatastreamDatabricksConnector {
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 
-    DataStreamSchema.registerIfNotExists(spark,
-                                         jobConf.datastream.database.value)
+    val tables = jobConf.datastream.tableSource.list()
 
-    // todo: support multi table
-    val table = jobConf.tables.headOption match {
+    // todo: support multi datastreamTable
+    val datastreamTable = tables.headOption match {
       case Some(tableConf) => tableConf
       case None =>
         throw new IllegalArgumentException(
-          "At least one datastream table should be provided")
+          "At least one datastream datastreamTable should be provided")
     }
 
-    val bucket = s"${jobConf.path(table.name.value)}/*/*/*/*/*"
+    val tablePath = s"${datastreamTable.path}/*/*/*/*"
+
+    DataStreamSchema.registerIfNotExists(spark, datastreamTable.database)
 
     /** Get a streaming Dataframe of Datastream records*/
     val inputDf =
-      DatastreamIO(spark, bucket, jobConf.datastream.fileReadConcurrency.value)
+      DatastreamIO(spark,
+                   tablePath,
+                   jobConf.datastream.fileReadConcurrency.value)
 
     val mergeSettings: MergeQueries = MergeQueries(
       MergeSettings(
-        targetTableName = table.name.value,
+        targetTableName = datastreamTable.table,
         primaryKeyFields = Seq.empty, //TODO
         orderByFields = Seq.empty,
-        //idColName = table.primaryKey.value,
-        //tsColName = table.timestamp.value,
+        //idColName = datastreamTable.primaryKey.value,
+        //tsColName = datastreamTable.timestamp.value,
       ))
 
     /** Merge into target table*/

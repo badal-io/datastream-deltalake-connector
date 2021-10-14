@@ -5,8 +5,18 @@ import java.net.URL
 import java.util.{Locale, UUID}
 
 import org.scalatest.BeforeAndAfterEach
-import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession, TestSparkSession}
-import org.apache.spark.sql.{AnalysisException, DataFrame, QueryTest, Row, SparkSession}
+import org.apache.spark.sql.test.{
+  SQLTestUtils,
+  SharedSparkSession,
+  TestSparkSession
+}
+import org.apache.spark.sql.{
+  AnalysisException,
+  DataFrame,
+  QueryTest,
+  Row,
+  SparkSession
+}
 import DirTestUtils._
 import io.delta.tables.DeltaTable
 import org.apache.spark.sql.delta.catalog.DeltaCatalog
@@ -17,8 +27,7 @@ import scala.io.Source
 class MergeQueriesSpec
     extends MergeIntoSuiteBase
     with BeforeAndAfterEach
-    with DeltaSQLCommandTest
-{
+    with DeltaSQLCommandTest {
   import testImplicits._
 
   override def beforeEach() {
@@ -65,10 +74,13 @@ class MergeQueriesSpec
     withTable("target") {
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
-        val sourceDf = spark.read.option("multiline", "true").json(getClass.getResource("/events/records1.json").toString)
+        val sourceDf = spark.read
+          .option("multiline", "true")
+          .json(getClass.getResource("/events/records1.json").toString)
 
         val emptyDF =
-          spark.createDataFrame(spark.sparkContext.emptyRDD[Row], DataStreamSchema.payloadSchema(sourceDf))
+          spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
+                                DataStreamSchema.payloadSchema(sourceDf))
 
         emptyDF.write.format("delta").saveAsTable("target")
 
@@ -77,10 +89,10 @@ class MergeQueriesSpec
         MergeQueries(mergeSettings).upsertToDelta(sourceDf, 1)
 
         checkAnswer(readDeltaTable(tempPath),
-          Row(1, 100) :: // Update
-            Row(2, 20) :: // No change
-            Row(3, 30) :: // Insert
-            Nil)
+                    Row(1, 100) :: // Update
+                      Row(2, 20) :: // No change
+                      Row(3, 30) :: // Insert
+                      Nil)
       }
     }
   }

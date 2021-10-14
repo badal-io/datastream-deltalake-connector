@@ -7,11 +7,11 @@ import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession}
 import org.scalatest.BeforeAndAfterEach
 
 abstract class MergeIntoSuiteBase
-  extends QueryTest
+    extends QueryTest
     with SharedSparkSession
     with BeforeAndAfterEach {
-   // with SQLTestUtils
-    //with DeltaTestUtilsForTempViews {
+  // with SQLTestUtils
+  //with DeltaTestUtilsForTempViews {
 
   import testImplicits._
   protected var tempDir: File = _

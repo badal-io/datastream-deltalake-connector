@@ -10,7 +10,7 @@ lazy val commonSettings = Seq(
     "org.apache.spark" %% "spark-core" % Versions.Spark % Provided,
     "org.apache.spark" %% "spark-streaming" % Versions.Spark % Provided,
     "com.github.pureconfig" %% "pureconfig" % Versions.PureConfig,
-    "com.google.http-client" % "google-http-client" % "1.40.0",
+    "com.google.cloud" % "google-cloud-storage" % Versions.GoogleCloudStorgage,
     "com.typesafe" % "config" % Versions.Typesafe,
     "io.delta" %% "delta-core" % Versions.Delta,
     "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test",
@@ -65,5 +65,11 @@ lazy val assemblySettings = Seq(
   test in assembly := {},
   assemblyShadeRules in assembly := Seq(
     ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inAll
-  )
+  ),
+  assemblyMergeStrategy in assembly := {
+    case "module-info.class" => MergeStrategy.discard
+    case x =>
+      val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)
+  }
 )

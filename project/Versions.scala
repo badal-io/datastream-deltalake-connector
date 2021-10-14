@@ -1,5 +1,6 @@
 object Versions {
   val Delta = "1.0.0"
+  val GoogleCloudStorgage = "2.0.1"
   val PureConfig = "0.16.0"
   val Refined = "0.9.10"
   val Scala = "2.12.10"

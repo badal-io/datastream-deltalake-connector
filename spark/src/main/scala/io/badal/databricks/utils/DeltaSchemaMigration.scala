@@ -25,7 +25,7 @@ object DeltaSchemaMigration {
     * */
   def updateSchema(tableName: String, sourceSchema: StructType)(
       implicit spark: SparkSession): DeltaTable = {
-   //TODO
+    //TODO
     /* val emptyDF =
       spark.createDataFrame(spark.sparkContext.emptyRDD[Row], sourceSchema)
     emptyDF.write
@@ -33,7 +33,7 @@ object DeltaSchemaMigration {
       .format("delta")
       .mode(SaveMode.Append)
       .saveAsTable(tableName)
-*/
+     */
     DeltaTable.forName(tableName)
 
   }

@@ -2,12 +2,12 @@ package io.badal.databricks.conf
 
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import io.badal.databricks.config.Config.{
+import io.badal.databricks.config.{
   DatastreamConf,
   DatastreamJobConf,
-  DeltalakeConf,
-  TableConf
+  DeltalakeConf
 }
+import io.badal.databricks.datastream.DiscoveryBucket
 import org.scalatest.EitherValues._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -22,16 +22,12 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
 
   val datastream = DatastreamConf(
     name = NonEmptyString.unsafeFrom("test-name"),
-    bucket = NonEmptyString.unsafeFrom("test-bucket"),
-    database = NonEmptyString.unsafeFrom("test-database"),
     startDate = Option(NonEmptyString.unsafeFrom("1970-01-01T00:00:00.00Z")),
-    fileReadConcurrency = PosInt.unsafeFrom(2)
-  )
-
-  val tables = Seq(
-    TableConf(name = NonEmptyString.unsafeFrom("test-table"),
-              primaryKey = NonEmptyString.unsafeFrom("test-key"),
-              timestamp = NonEmptyString.unsafeFrom("test-timestamp"))
+    fileReadConcurrency = PosInt.unsafeFrom(2),
+    tableSource = DiscoveryBucket(
+      NonEmptyString.unsafeFrom("test-discovery-bucket"),
+      Option(NonEmptyString.unsafeFrom("path/to/test/dir"))
+    ),
   )
 
   val deltalake = DeltalakeConf(
@@ -39,15 +35,10 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
     mergeFrequencyMinutes = PosInt.unsafeFrom(1)
   )
 
-  val validConf = DatastreamJobConf(datastream, tables, deltalake)
+  val validConf = DatastreamJobConf(datastream, deltalake)
 
   "reading a DatastreamJobConf" should "return a DatastreamJobConf for a valid typesafe configuration" in {
     val res = ConfigSource.resources("test.conf").load[DatastreamJobConf]
     res.right.value should be(validConf)
-  }
-
-  "path" should "return the correct path with respect to the bucket, database, and provided table" in {
-    validConf.path("test-table") should be(
-      "test-bucket/test-database.test-table")
   }
 }

@@ -1,10 +1,6 @@
 package io.badal.databricks.utils
 
-import java.util
-import java.util.List
-import java.util.stream.Collectors
-
-import org.apache.spark.sql.{Column, DataFrame, SparkSession}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
 

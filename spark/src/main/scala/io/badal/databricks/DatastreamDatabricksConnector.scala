@@ -34,42 +34,33 @@ object DatastreamDatabricksConnector {
 
     val tables = jobConf.datastream.tableSource.list()
 
-    // todo: support multi datastreamTable
-    val datastreamTable = tables.headOption match {
-      case Some(tableConf) => tableConf
-      case None =>
-        throw new IllegalArgumentException(
-          "At least one datastream datastreamTable should be provided")
+    tables.foreach { datastreamTable =>
+      val tablePath = s"${datastreamTable.path}/*/*/*/*"
+
+      val mergeSettings: MergeQueries = MergeQueries(
+        MergeSettings(
+          targetTableName = datastreamTable.table,
+          primaryKeyFields = Seq.empty, //TODO
+          orderByFields = Seq.empty
+        ))
+
+      DataStreamSchema.registerIfNotExists(spark, datastreamTable.database)
+
+      /** Get a streaming Dataframe of Datastream records*/
+      val inputDf =
+        DatastreamIO(spark,
+                     tablePath,
+                     jobConf.datastream.fileReadConcurrency.value)
+
+      /** Merge into target table*/
+      inputDf.writeStream
+        .format("delta")
+        .foreachBatch(mergeSettings.upsertToDelta _)
+        .outputMode("update")
+        .start()
     }
 
-    val tablePath = s"${datastreamTable.path}/*/*/*/*"
-
-    DataStreamSchema.registerIfNotExists(spark, datastreamTable.database)
-
-    /** Get a streaming Dataframe of Datastream records*/
-    val inputDf =
-      DatastreamIO(spark,
-                   tablePath,
-                   jobConf.datastream.fileReadConcurrency.value)
-
-    val mergeSettings: MergeQueries = MergeQueries(
-      MergeSettings(
-        targetTableName = datastreamTable.table,
-        primaryKeyFields = Seq.empty, //TODO
-        orderByFields = Seq.empty,
-        //idColName = datastreamTable.primaryKey.value,
-        //tsColName = datastreamTable.timestamp.value,
-      ))
-
-    /** Merge into target table*/
-    val query = inputDf.writeStream
-      .format("delta")
-      .foreachBatch(mergeSettings.upsertToDelta _)
-      .outputMode("update")
-      //   .option("checkpointLocation", "dbfs:/checkpointPath")
-      .start()
-
-    query.awaitTermination()
+    spark.streams.awaitAnyTermination()
     //    val latestChangeForEachKey = MergeQueries.getLatestRow(inputDf, "id", "source_timestamp")
 //
 //    val query = inputDf.writeStream

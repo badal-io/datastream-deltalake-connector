@@ -27,7 +27,7 @@ case class MergeQueries(settings: MergeSettings) {
   def upsertToDelta(microBatchOutputDF: DataFrame, batchId: Long): Unit = {
 
     implicit val ss = microBatchOutputDF.sparkSession
-    val targetTableAlias = "t"
+    val targetTableAlias = s"temp-${settings.targetTableName}"
     val srcPayloadTableAlias = "s.payload"
     val payloadFields: Array[String] =
       DataStreamSchema.payloadFields(microBatchOutputDF)
@@ -49,7 +49,7 @@ case class MergeQueries(settings: MergeSettings) {
     val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
 
     targetTable
-      .as("t")
+      .as(targetTableAlias)
       .merge(
         latestChangeForEachKey.as("s"),
         buildJoinConditions(primaryKeyFields,

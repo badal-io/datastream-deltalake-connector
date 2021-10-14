@@ -19,7 +19,8 @@ object GCSOps {
           val trimmed =
             if (path.isEmpty) blob.getName
             else blob.getName.substring(path.length + 1)
-          trimmed.split("/").head
+
+          trimmed.split("/").headOption.getOrElse("")
       }
       .filter(_.nonEmpty)
       .toSet

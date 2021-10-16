@@ -1,42 +1,62 @@
 package io.badal.databricks.utils
 
 import io.delta.tables.DeltaTable
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import scala.util.Try
 
 object DeltaSchemaMigration {
-  def createTableIfDoesNotExist(tableName: String, schema: StructType)(
-      implicit spark: SparkSession) = {
-    val exists = doesTableExist(tableName)
-    if (!exists) {
-      val emptyDF =
-        spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
-      emptyDF.write
-        .format("delta")
-        .mode(SaveMode.Overwrite)
-        .saveAsTable(tableName)
-    }
-  }
+  /** A struct field that is added to the target table to maintain important Datastream metadata */
+  val DatastreamMetadataField = "datastream_metadata"
+
+  val log = Logger.getLogger(getClass.getName)
+
+
+//  def createTableIfDoesNotExist(tableName: String, schema: StructType)(
+//      implicit spark: SparkSession) = {
+//    val exists = doesTableExist(tableName)
+//    if (!exists) {
+//      val emptyDF =
+//        spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
+//
+//      log.info(s"Creating table $tableName")
+//
+//      emptyDF.write
+//        .format("delta")
+//        .mode(SaveMode.Overwrite)
+//        .saveAsTable(tableName)
+//    }
+//  }
 
   /** Update Table schema.
     * Simplest way to do this is to append and empty dataframe to the table with mergeSchema=true
     * */
-  def updateSchema(tableName: String, sourceSchema: StructType)(
-      implicit spark: SparkSession): DeltaTable = {
-   //TODO
-    /* val emptyDF =
-      spark.createDataFrame(spark.sparkContext.emptyRDD[Row], sourceSchema)
+  def updateSchema(tableName: String, tableMetadata: TableMetadata)(
+    implicit spark: SparkSession): DeltaTable = {
+    //TODO There may be a cleaner way to do this - instead of always appending an empty Dataframe, may want to first check if schema has changed
+
+    val schema = buildTargetShema(tableMetadata.payloadSchema, tableMetadata.orderByFieldsSchema)
+    val emptyDF =
+      spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
+
+    log.info(s"Target schema for table $tableName is  $schema")
+
     emptyDF.write
       .option("mergeSchema", "true")
       .format("delta")
       .mode(SaveMode.Append)
       .saveAsTable(tableName)
-*/
+
     DeltaTable.forName(tableName)
 
+
+
   }
+
+  def buildTargetShema(payloadSchema: StructType, datastreamMetadataSchema: StructType) =
+    payloadSchema.add(DatastreamMetadataField, datastreamMetadataSchema)
 
   private def doesTableExist(tableName: String): Boolean =
     Try(DeltaTable.forName("target")).isSuccess

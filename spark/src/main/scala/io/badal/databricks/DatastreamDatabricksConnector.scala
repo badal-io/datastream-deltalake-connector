@@ -48,19 +48,12 @@ object DatastreamDatabricksConnector {
     val inputDf =
       DatastreamIO(spark, bucket, jobConf.datastream.fileReadConcurrency.value)
 
-    val mergeSettings: MergeQueries = MergeQueries(
-      MergeSettings(
-        targetTableName = table.name.value,
-        primaryKeyFields = Seq.empty, //TODO
-        orderByFields = Seq.empty,
-        //idColName = table.primaryKey.value,
-        //tsColName = table.timestamp.value,
-      ))
+
 
     /** Merge into target table*/
     val query = inputDf.writeStream
       .format("delta")
-      .foreachBatch(mergeSettings.upsertToDelta _)
+      .foreachBatch(MergeQueries.upsertToDelta _)
       .outputMode("update")
       //   .option("checkpointLocation", "dbfs:/checkpointPath")
       .start()

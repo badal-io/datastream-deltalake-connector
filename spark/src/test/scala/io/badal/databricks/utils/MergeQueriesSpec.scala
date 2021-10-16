@@ -5,8 +5,18 @@ import java.net.URL
 import java.util.{Locale, UUID}
 
 import org.scalatest.BeforeAndAfterEach
-import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession, TestSparkSession}
-import org.apache.spark.sql.{AnalysisException, DataFrame, QueryTest, Row, SparkSession}
+import org.apache.spark.sql.test.{
+  SQLTestUtils,
+  SharedSparkSession,
+  TestSparkSession
+}
+import org.apache.spark.sql.{
+  AnalysisException,
+  DataFrame,
+  QueryTest,
+  Row,
+  SparkSession
+}
 import DirTestUtils._
 import io.delta.tables.DeltaTable
 import org.apache.spark.sql.delta.catalog.DeltaCatalog
@@ -17,8 +27,7 @@ import scala.io.Source
 class MergeQueriesSpec
     extends MergeIntoSuiteBase
     with BeforeAndAfterEach
-    with DeltaSQLCommandTest
-{
+    with DeltaSQLCommandTest {
   import testImplicits._
 
   override def beforeEach() {
@@ -60,10 +69,13 @@ class MergeQueriesSpec
     withTable("target") {
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
-        val sourceDf = spark.read.option("multiline", "true").json(getClass.getResource("/events/records1.json").toString)
+        val sourceDf = spark.read
+          .option("multiline", "true")
+          .json(getClass.getResource("/events/records1.json").toString)
 
         val emptyDF =
-          spark.createDataFrame(spark.sparkContext.emptyRDD[Row], DataStreamSchema.payloadSchema(sourceDf))
+          spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
+                                DataStreamSchema.payloadSchema(sourceDf))
 
         emptyDF.write.format("delta").saveAsTable("target")
 
@@ -71,18 +83,19 @@ class MergeQueriesSpec
 
         MergeQueries.upsertToDelta(sourceDf, 1)
 
-
-        checkAnswer(readDeltaTableByName("inventory_voters").select("id", "name"),
-          Row("124380165","Rebecca Hammond") ::
-            Row("161401245","Sabrina Ellis") ::
-            Row("164488507","Thomas Hubbard") ::
-            Row("290819604","Christopher Bates") ::
-            Row("627710212","Veronica Stanley") ::
-            Row("862224591","Nathan Lowe") ::
-            Row("915725144","Brianna Tucker") ::
-            Row("947473408","Eric Flores") ::
-            Row("993488433","Allison Dalton") ::
-            Nil)
+        checkAnswer(
+          readDeltaTableByName("inventory_voters").select("id", "name"),
+          Row("124380165", "Rebecca Hammond") ::
+            Row("161401245", "Sabrina Ellis") ::
+            Row("164488507", "Thomas Hubbard") ::
+            Row("290819604", "Christopher Bates") ::
+            Row("627710212", "Veronica Stanley") ::
+            Row("862224591", "Nathan Lowe") ::
+            Row("915725144", "Brianna Tucker") ::
+            Row("947473408", "Eric Flores") ::
+            Row("993488433", "Allison Dalton") ::
+            Nil
+        )
       }
     }
   }

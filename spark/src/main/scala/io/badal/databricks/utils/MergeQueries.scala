@@ -10,8 +10,7 @@ import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
 
-case class MergeSettings(targetTableName: String,
-                         tableMetadata: TableMetadata)
+case class MergeSettings(targetTableName: String, tableMetadata: TableMetadata)
 
 object MergeQueries {
 
@@ -35,7 +34,8 @@ object MergeQueries {
   def upsertToDelta(microBatchOutputDF: DataFrame, batchId: Long): Unit = {
 
     implicit val ss = microBatchOutputDF.sparkSession
-    implicit val tableMetadata: TableMetadata = TableMetadata.fromDf(microBatchOutputDF)
+    implicit val tableMetadata: TableMetadata =
+      TableMetadata.fromDf(microBatchOutputDF)
 
     val targetTableName = TableNameFormatter.targetTableName(tableMetadata)
 
@@ -45,11 +45,15 @@ object MergeQueries {
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
     /** First update the schema of the target table*/
-    val targetTable = DeltaSchemaMigration.updateSchema(targetTableName, tableMetadata)
+    val targetTable =
+      DeltaSchemaMigration.updateSchema(targetTableName, tableMetadata)
 
     val updateExp = toFieldMap(payloadFields, SrcPayloadTableAlias)
 
-    val timestampCompareExp = buildTimestampCompareSql(tableMetadata.orderByFields.head, TargetTableAlias, SrcTableAlias)
+    val timestampCompareExp = buildTimestampCompareSql(
+      tableMetadata.orderByFields.head,
+      TargetTableAlias,
+      SrcTableAlias)
 
     val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
     val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
@@ -71,7 +75,8 @@ object MergeQueries {
       .execute()
   }
 
-  private def getLatestRow(df: DataFrame)(implicit tableMetadata: TableMetadata): DataFrame = {
+  private def getLatestRow(df: DataFrame)(
+      implicit tableMetadata: TableMetadata): DataFrame = {
     val pKeys = tableMetadata.payloadPrimaryKeyFields.map(payloadField)
 
     // TODO: handle deleted field
@@ -103,11 +108,7 @@ object MergeQueries {
   private def payloadField(field: String) =
     s"payload.${field}"
 
-
   private def toFieldMap(fields: Seq[String],
                          srcTable: String): Map[String, String] =
     fields.map(field => (s"$field" -> s"$srcTable.$field")).toMap
 }
-
-
-

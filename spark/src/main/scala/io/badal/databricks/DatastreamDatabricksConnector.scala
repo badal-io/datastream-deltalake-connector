@@ -48,8 +48,6 @@ object DatastreamDatabricksConnector {
     val inputDf =
       DatastreamIO(spark, bucket, jobConf.datastream.fileReadConcurrency.value)
 
-
-
     /** Merge into target table*/
     val query = inputDf.writeStream
       .format("delta")

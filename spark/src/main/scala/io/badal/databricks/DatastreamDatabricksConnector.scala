@@ -1,12 +1,7 @@
 package io.badal.databricks
 
 import io.badal.databricks.config.Config.DatastreamJobConf
-import io.badal.databricks.utils.{
-  DataStreamSchema,
-  DatastreamIO,
-  MergeQueries,
-  MergeSettings
-}
+import io.badal.databricks.utils.{DataStreamSchema, DatastreamIO, MergeQueries}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import pureconfig.ConfigSource
@@ -31,6 +26,7 @@ object DatastreamDatabricksConnector {
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 
+    // TODO: Remove - get Database from TableMetadata
     DataStreamSchema.registerIfNotExists(spark,
                                          jobConf.datastream.database.value)
 

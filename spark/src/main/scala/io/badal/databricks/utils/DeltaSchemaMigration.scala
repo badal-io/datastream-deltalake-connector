@@ -36,9 +36,10 @@ object DeltaSchemaMigration {
   def updateSchema(tableName: String, tableMetadata: TableMetadata)(
       implicit spark: SparkSession): DeltaTable = {
     //TODO There may be a cleaner way to do this - instead of always appending an empty Dataframe, may want to first check if schema has changed
-
-    val schema = buildTargetShema(tableMetadata.payloadSchema,
-                                  tableMetadata.orderByFieldsSchema)
+    // Though it is quite possible that DeltaLake takes care of these optimizations under the hood
+    // see the commented out migrateTableSchema function bellow for another way of doing this
+    val schema = buildTargetSchema(tableMetadata.payloadSchema,
+                                   tableMetadata.orderByFieldsSchema)
     val emptyDF =
       spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
 
@@ -54,8 +55,8 @@ object DeltaSchemaMigration {
 
   }
 
-  def buildTargetShema(payloadSchema: StructType,
-                       datastreamMetadataSchema: StructType) =
+  def buildTargetSchema(payloadSchema: StructType,
+                        datastreamMetadataSchema: StructType) =
     payloadSchema.add(DatastreamMetadataField, datastreamMetadataSchema)
 
   private def doesTableExist(tableName: String): Boolean =

@@ -10,8 +10,6 @@ import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
 
-case class MergeSettings(targetTableName: String, tableMetadata: TableMetadata)
-
 object MergeQueries {
 
   private val TargetTableAlias = "t"

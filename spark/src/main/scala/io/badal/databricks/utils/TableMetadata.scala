@@ -23,22 +23,23 @@ case class TableMetadata(sourceType: DatastreamSource,
 }
 
 object TableMetadata {
-  val ORACLE_ORDER_BY_FIELDS = Seq("source_timestamp", "source_metadata.scn")
-  val MYSQL_ORDER_BY_FIELDS = Seq("source_timestamp",
-                                  "source_metadata.log_file",
-                                  "source_metadata.log_position")
-  val ORACLE_ORDER_BY_FIELDS_SCHEMA = new StructType(
+  private val ORACLE_ORDER_BY_FIELDS =
+    Seq("source_timestamp", "source_metadata.scn")
+  private val MYSQL_ORDER_BY_FIELDS = Seq("source_timestamp",
+                                          "source_metadata.log_file",
+                                          "source_metadata.log_position")
+  private val ORACLE_ORDER_BY_FIELDS_SCHEMA = new StructType(
     Array(
       StructField("source_timestamp", TimestampType, true),
       StructField("source_metadata.scn", LongType, true)
     ))
-  val MYSQL_ORDER_BY_FIELDS_SCHEMA = new StructType(
+  private val MYSQL_ORDER_BY_FIELDS_SCHEMA = new StructType(
     Array(
       StructField("source_timestamp", TimestampType, true),
       StructField("source_metadata.log_file", StringType, true),
       StructField("source_metadata.log_position", LongType, true)
     ))
-  val METADATA_DELETED = "_metadata_deleted"
+  private val METADATA_DELETED = "_metadata_deleted"
 
   /** Gets the TableMetadata by inspecting the first elements of a Dataframe*/
   def fromDf(df: DataFrame): TableMetadata = {

@@ -7,7 +7,7 @@ import scala.collection.JavaConverters._
 object GCSOps {
 
   def list(bucketName: String, path: String): Set[String] = {
-    val storage = StorageOptions.getDefaultInstance.getService
+    val storage = StorageOptions.getDefaultInstance.getService()
     val bucket = storage.get(bucketName)
 
     val targets = bucket

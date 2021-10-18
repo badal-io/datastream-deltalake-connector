@@ -18,6 +18,8 @@ import pureconfig.generic.auto._
 
 object DatastreamDatabricksConnector {
 
+  val logger = Logger.getLogger(DatastreamDatabricksConnector.getClass)
+
   def main(args: Array[String]): Unit = {
 
     val jobConf: DatastreamJobConf =
@@ -35,7 +37,10 @@ object DatastreamDatabricksConnector {
     val tables = jobConf.datastream.tableSource.list()
 
     tables.foreach { datastreamTable =>
-      val tablePath = s"${datastreamTable.path}/*/*/*/*"
+      logger.info(
+        s"defining stream for datastream table defined at ${datastreamTable.path}")
+
+      val tablePath = s"${datastreamTable.path}/*/*/*/*/*"
 
       val mergeSettings: MergeQueries = MergeQueries(
         MergeSettings(

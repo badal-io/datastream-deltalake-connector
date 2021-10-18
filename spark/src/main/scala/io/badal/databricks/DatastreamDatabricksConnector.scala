@@ -1,12 +1,8 @@
 package io.badal.databricks
 
+import io.badal.databricks.config.Config.DatastreamJobConf
 import io.badal.databricks.config.DatastreamJobConf
-import io.badal.databricks.utils.{
-  DataStreamSchema,
-  DatastreamIO,
-  MergeQueries,
-  MergeSettings
-}
+import io.badal.databricks.utils.{DataStreamSchema, DatastreamIO, MergeQueries}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import pureconfig.ConfigSource
@@ -34,6 +30,8 @@ object DatastreamDatabricksConnector {
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 
+    // TODO: Remove - get Database from TableMetadata
+    DataStreamSchema.registerIfNotExists(spark, jobConf.datastream.database.value)
     val tables = jobConf.datastream.tableSource.list()
 
     tables.foreach { datastreamTable =>
@@ -41,13 +39,6 @@ object DatastreamDatabricksConnector {
         s"defining stream for datastream table defined at ${datastreamTable.path}")
 
       val tablePath = s"${datastreamTable.path}/*/*/*/*/*"
-
-      val mergeSettings: MergeQueries = MergeQueries(
-        MergeSettings(
-          targetTableName = datastreamTable.table,
-          primaryKeyFields = Seq.empty, //TODO
-          orderByFields = Seq.empty
-        ))
 
       DataStreamSchema.registerIfNotExists(spark, datastreamTable.database)
 
@@ -60,7 +51,7 @@ object DatastreamDatabricksConnector {
       /** Merge into target table*/
       inputDf.writeStream
         .format("delta")
-        .foreachBatch(mergeSettings.upsertToDelta _)
+        .foreachBatch(MergeQueries.upsertToDelta _)
         .outputMode("update")
         .start()
     }

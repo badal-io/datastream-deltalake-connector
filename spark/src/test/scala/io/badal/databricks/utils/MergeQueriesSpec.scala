@@ -66,11 +66,6 @@ class MergeQueriesSpec
   }
 
   test("upsert to an empty table") {
-    val mergeSettings = MergeSettings(
-      targetTableName = "target",
-      primaryKeyFields = Seq("id"),
-      orderByFields = Seq("source_timestamp")
-    )
     withTable("target") {
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
@@ -86,19 +81,30 @@ class MergeQueriesSpec
 
         DeltaTable.forName("target")
 
-        MergeQueries(mergeSettings).upsertToDelta(sourceDf, 1)
+        MergeQueries.upsertToDelta(sourceDf, 1)
 
-        checkAnswer(readDeltaTable(tempPath),
-                    Row(1, 100) :: // Update
-                      Row(2, 20) :: // No change
-                      Row(3, 30) :: // Insert
-                      Nil)
+        checkAnswer(
+          readDeltaTableByName("inventory_voters").select("id", "name"),
+          Row("124380165", "Rebecca Hammond") ::
+            Row("161401245", "Sabrina Ellis") ::
+            Row("164488507", "Thomas Hubbard") ::
+            Row("290819604", "Christopher Bates") ::
+            Row("627710212", "Veronica Stanley") ::
+            Row("862224591", "Nathan Lowe") ::
+            Row("915725144", "Brianna Tucker") ::
+            Row("947473408", "Eric Flores") ::
+            Row("993488433", "Allison Dalton") ::
+            Nil
+        )
       }
     }
   }
 
   protected def readDeltaTable(path: String): DataFrame = {
     spark.read.format("delta").load(path)
+  }
+  protected def readDeltaTableByName(table: String): DataFrame = {
+    spark.table(table)
   }
 
   protected def append(df: DataFrame, partitions: Seq[String] = Nil): Unit = {

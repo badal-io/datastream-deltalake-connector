@@ -5,7 +5,7 @@ import org.apache.spark.sql.SparkSession
 trait TableProvider {
   def getTablesFromSource(inputBucket: String): Seq[String]
 
-  def getAllTablesToMerge(inputBucket: String, tables: Option[Seq[String]])(
+  /*def getAllTablesToMerge(inputBucket: String, tables: Option[Seq[String]])(
       implicit ss: SparkSession): Seq[MergeSettings] = {
     val tableList = tables match {
       case Some(tables) => tables
@@ -20,7 +20,7 @@ trait TableProvider {
         //tsColName = DataStreamSchema.SourceTimestampField,
       )
     }
-  }
+  }*/
 
   private def avroFilePaths(inputBucket: String,
                             tables: Option[Seq[String]]): String = {

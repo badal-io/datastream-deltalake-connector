@@ -5,7 +5,7 @@ import org.apache.spark.sql.types.StructType
 
 object DataStreamSchema {
   val PayloadField = "payload"
-  val SourceTimestampField = "source_timestamp"
+  //val SourceTimestampField = "source_timestamp"
 
   def registerIfNotExists(spark: SparkSession, database: String): Unit =
     spark.sql(s"CREATE DATABASE IF NOT EXISTS $database")

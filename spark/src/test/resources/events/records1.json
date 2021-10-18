@@ -7,7 +7,7 @@
     "read_method": "mysql-cdc-binlog",
     "stream_name": "projects/472383905713/locations/us-central1/streams/databricks-poc",
     "schema_key": "e98d95ab545285b7571f9c4bdeaacb7abfac251b",
-    "source_metadataf": {
+    "source_metadata": {
       "table": "inventory.voters",
       "database": "demo",
       "primary_keys": [

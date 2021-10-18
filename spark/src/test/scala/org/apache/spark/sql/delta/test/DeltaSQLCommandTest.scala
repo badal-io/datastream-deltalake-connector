@@ -14,7 +14,8 @@ import org.apache.spark.sql.test.{SharedSparkSession, TestSparkSession}
   *
   * @see https://issues.apache.org/jira/browse/SPARK-25003
   */
-class DeltaTestSparkSession(sparkConf: SparkConf) extends TestSparkSession(sparkConf) {
+class DeltaTestSparkSession(sparkConf: SparkConf)
+    extends TestSparkSession(sparkConf) {
   override val extensions: SparkSessionExtensions = {
     val extensions = new SparkSessionExtensions
     new DeltaSparkSessionExtension().apply(extensions)
@@ -31,7 +32,8 @@ trait DeltaSQLCommandTest { self: SharedSparkSession =>
   override protected def createSparkSession = {
     SparkSession.cleanupAnyExistingSession()
     val session = new DeltaTestSparkSession(sparkConf)
-    session.conf.set(SQLConf.V2_SESSION_CATALOG_IMPLEMENTATION.key, classOf[DeltaCatalog].getName)
+    session.conf.set(SQLConf.V2_SESSION_CATALOG_IMPLEMENTATION.key,
+                     classOf[DeltaCatalog].getName)
     session
   }
 }

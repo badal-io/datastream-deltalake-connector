@@ -1,12 +1,7 @@
 package io.badal.databricks
 
 import io.badal.databricks.config.Config.DatastreamJobConf
-import io.badal.databricks.utils.{
-  DataStreamSchema,
-  DatastreamIO,
-  MergeQueries,
-  MergeSettings
-}
+import io.badal.databricks.utils.{DataStreamSchema, DatastreamIO, MergeQueries}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import pureconfig.ConfigSource
@@ -31,6 +26,7 @@ object DatastreamDatabricksConnector {
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
 
+    // TODO: Remove - get Database from TableMetadata
     DataStreamSchema.registerIfNotExists(spark,
                                          jobConf.datastream.database.value)
 
@@ -48,19 +44,10 @@ object DatastreamDatabricksConnector {
     val inputDf =
       DatastreamIO(spark, bucket, jobConf.datastream.fileReadConcurrency.value)
 
-    val mergeSettings: MergeQueries = MergeQueries(
-      MergeSettings(
-        targetTableName = table.name.value,
-        primaryKeyFields = Seq.empty, //TODO
-        orderByFields = Seq.empty,
-        //idColName = table.primaryKey.value,
-        //tsColName = table.timestamp.value,
-      ))
-
     /** Merge into target table*/
     val query = inputDf.writeStream
       .format("delta")
-      .foreachBatch(mergeSettings.upsertToDelta _)
+      .foreachBatch(MergeQueries.upsertToDelta _)
       .outputMode("update")
       //   .option("checkpointLocation", "dbfs:/checkpointPath")
       .start()

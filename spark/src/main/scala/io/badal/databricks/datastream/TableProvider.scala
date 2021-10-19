@@ -15,14 +15,6 @@ final case class DiscoveryBucket(bucket: NonEmptyString,
     GCSOps
       .list(bucket.value, path)
       .toSeq
-      .flatMap { tableDir =>
-        tableDir.split("\\.").toList match {
-          case List(database, table) =>
-            Option(DatastreamTable(bucket.value, path, database, table))
-          case _ =>
-            // todo: log invalid directory
-            None
-        }
-      }
+      .map(table => DatastreamTable(bucket.value, path, table))
   }
 }

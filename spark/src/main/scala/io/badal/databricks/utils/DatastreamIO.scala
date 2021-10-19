@@ -1,5 +1,6 @@
 package io.badal.databricks.utils
 
+import io.badal.databricks.datastream.DatastreamTable
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
@@ -12,23 +13,32 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   */
 object DatastreamIO {
   def apply(spark: SparkSession,
-            inputBucket: String,
+            datastreamTable: DatastreamTable,
             fileReadConcurrency: Int,
-            tables: Option[Seq[String]] = None): DataFrame = {
-    spark.readStream
+            ourFlag: Boolean): DataFrame = {
+
+    def rawEventStreamFrom(df: DataFrame, table: String): DataFrame = {
+      df.writeStream
+        .option("mergeSchema", true)
+        .format("delta")
+        .outputMode("update")
+        .start(table)
+
+      spark.readStream
+        .format("delta")
+        .load(table)
+    }
+
+    val inputDf = spark.readStream
       .format("avro")
       .option("ignoreExtension", true)
       .option("maxFilesPerTrigger", fileReadConcurrency)
-      .load(avroFilePaths(inputBucket, tables))
+      .load(avroFilePaths(datastreamTable.path))
+
+    if (ourFlag) rawEventStreamFrom(inputDf, datastreamTable.rawTableName)
+    else inputDf
   }
 
-  private def avroFilePaths(inputBucket: String,
-                            tables: Option[Seq[String]]): String = {
-    // TODO: demo_inventory.voters/*/*/*/*/*
-    tables match {
-      case None => s"gs://$inputBucket"
-      case _    => throw new Exception("specifying tables is not supported yet")
-      //    case Some(tables) => tables.map(table => s"gs://inputBucket/$table")
-    }
-  }
+  private def avroFilePaths(inputBucket: String): String =
+    s"gs://$inputBucket/*/*/*/*/*"
 }

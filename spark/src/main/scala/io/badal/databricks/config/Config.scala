@@ -5,7 +5,8 @@ import eu.timepit.refined.types.numeric.PosInt
 import io.badal.databricks.datastream.TableProvider
 
 final case class DatastreamJobConf(datastream: DatastreamConf,
-                                   deltalake: DeltalakeConf)
+                                   deltalake: DeltalakeConf,
+                                   generateRawCdcTable: Boolean)
 
 final case class DatastreamConf(
     name: NonEmptyString,

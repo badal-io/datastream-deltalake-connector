@@ -2,7 +2,7 @@ package io.badal.databricks.datastream
 
 final case class DatastreamTable(bucket: String,
                                  bucketPath: String,
-                                 database: String,
                                  table: String) {
-  val path = s"$bucket/$bucketPath/$database.$table"
+  val path = s"$bucket/$bucketPath$table"
+  val rawTableName = s"delta/$table-cdc"
 }

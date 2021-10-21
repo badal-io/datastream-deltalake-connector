@@ -2,10 +2,12 @@ package io.badal.databricks.conf
 
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
+import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
 import io.badal.databricks.config.{
   DatastreamConf,
   DatastreamJobConf,
-  DeltalakeConf
+  DeltalakeConf,
+  SchemaEvolutionStrategy
 }
 import io.badal.databricks.datastream.DiscoveryBucket
 import org.scalatest.EitherValues._
@@ -17,6 +19,7 @@ import pureconfig.ConfigSource
 import eu.timepit.refined.pureconfig._
 import pureconfig._
 import pureconfig.generic.auto._
+import pureconfig.module.enumeratum._
 
 class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
 
@@ -32,10 +35,12 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
 
   val deltalake = DeltalakeConf(
     tableNamePrefix = "test-prefix",
-    mergeFrequencyMinutes = PosInt.unsafeFrom(1)
+    mergeFrequencyMinutes = PosInt.unsafeFrom(1),
+    Merge //SchemaEvolution.Merge
   )
 
-  val validConf = DatastreamJobConf(datastream, deltalake)
+  val validConf =
+    DatastreamJobConf(datastream, deltalake, true, "checkpoint")
 
   "reading a DatastreamJobConf" should "return a DatastreamJobConf for a valid typesafe configuration" in {
     val res = ConfigSource.resources("test.conf").load[DatastreamJobConf]

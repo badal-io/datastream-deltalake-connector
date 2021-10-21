@@ -1,11 +1,7 @@
 package io.badal.databricks.utils
 
 object TableNameFormatter {
-  def targetTableName(tableMetadata: TableMetadata) =
-    sanitizedTable(tableMetadata)
-  def logTableName(tableMetadata: TableMetadata) =
-    s"${sanitizedTable(tableMetadata)}_log"
-
-  private def sanitizedTable(tableMetadata: TableMetadata) =
-    tableMetadata.table.replace('.', '_')
+  def targetTableName(tableName: String) = sanitizedTable(tableName)
+  def logTableName(tableName: String) = s"${sanitizedTable(tableName)}_log"
+  def sanitizedTable(tableName: String) = tableName.replace('.', '_')
 }

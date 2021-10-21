@@ -6,7 +6,8 @@ import io.badal.databricks.datastream.TableProvider
 
 final case class DatastreamJobConf(datastream: DatastreamConf,
                                    deltalake: DeltalakeConf,
-                                   generateRawCdcTable: Boolean)
+                                   generateLogTable: Boolean,
+                                   checkpointDir: String)
 
 final case class DatastreamConf(
     name: NonEmptyString,
@@ -16,4 +17,6 @@ final case class DatastreamConf(
 )
 
 final case class DeltalakeConf(tableNamePrefix: String,
-                               mergeFrequencyMinutes: PosInt)
+                               mergeFrequencyMinutes: PosInt,
+                               schemaEvolution: SchemaEvolutionStrategy)
+//                               schemaEvolution: SchemaEvolution)

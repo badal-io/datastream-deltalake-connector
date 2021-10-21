@@ -1,9 +1,10 @@
 package io.badal.databricks.utils
 
+import io.badal.databricks.config.SchemaEvolutionStrategy
+
 import java.util
 import java.util.{Arrays, List}
 import java.util.stream.Collectors
-
 import io.badal.databricks.utils.DeltaSchemaMigration.DatastreamMetadataField
 import org.apache.avro.generic.GenericRecord
 import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
@@ -29,13 +30,16 @@ object MergeQueries {
     * @param microBatchOutputDF
     * @param batchId
     */
-  def upsertToDelta(microBatchOutputDF: DataFrame, batchId: Long): Unit = {
+  def upsertToDelta(microBatchOutputDF: DataFrame,
+                    batchId: Long,
+                    schemaEvolutionStrategy: SchemaEvolutionStrategy): Unit = {
 
     implicit val ss = microBatchOutputDF.sparkSession
     implicit val tableMetadata: TableMetadata =
       TableMetadata.fromDf(microBatchOutputDF)
 
-    val targetTableName = TableNameFormatter.targetTableName(tableMetadata)
+    val targetTableName =
+      TableNameFormatter.targetTableName(tableMetadata.table)
 
     val payloadFields: Array[String] =
       DataStreamSchema.payloadFields(microBatchOutputDF)
@@ -44,7 +48,9 @@ object MergeQueries {
 
     /** First update the schema of the target table*/
     val targetTable =
-      DeltaSchemaMigration.updateSchema(targetTableName, tableMetadata)
+      DeltaSchemaMigration.updateSchema(targetTableName,
+                                        tableMetadata,
+                                        schemaEvolutionStrategy)
 
     val updateExp = toFieldMap(payloadFields, SrcPayloadTableAlias)
 

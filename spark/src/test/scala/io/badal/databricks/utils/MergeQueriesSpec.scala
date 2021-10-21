@@ -3,7 +3,6 @@ package io.badal.databricks.utils
 import java.io.{File, IOException}
 import java.net.URL
 import java.util.{Locale, UUID}
-
 import org.scalatest.BeforeAndAfterEach
 import org.apache.spark.sql.test.{
   SQLTestUtils,
@@ -18,6 +17,7 @@ import org.apache.spark.sql.{
   SparkSession
 }
 import DirTestUtils._
+import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
 import io.delta.tables.DeltaTable
 import org.apache.spark.sql.delta.catalog.DeltaCatalog
 import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
@@ -81,7 +81,7 @@ class MergeQueriesSpec
 
         DeltaTable.forName("target")
 
-        MergeQueries.upsertToDelta(sourceDf, 1)
+        MergeQueries.upsertToDelta(sourceDf, 1, Merge)
 
         checkAnswer(
           readDeltaTableByName("inventory_voters").select("id", "name"),

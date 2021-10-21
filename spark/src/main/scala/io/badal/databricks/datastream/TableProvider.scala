@@ -8,13 +8,13 @@ sealed trait TableProvider {
 
 }
 final case class DiscoveryBucket(bucket: NonEmptyString,
-                                 pathOpt: Option[NonEmptyString])
+                                 path: Option[NonEmptyString])
     extends TableProvider {
   override def list(): Seq[DatastreamTable] = {
-    val path = pathOpt.map(_.value).getOrElse("")
+    val pathOrEmpty = path.map(_.value).getOrElse("")
     GCSOps
-      .list(bucket.value, path)
+      .list(bucket.value, pathOrEmpty)
       .toSeq
-      .map(table => DatastreamTable(bucket.value, path, table))
+      .map(table => DatastreamTable(bucket.value, pathOrEmpty, table))
   }
 }

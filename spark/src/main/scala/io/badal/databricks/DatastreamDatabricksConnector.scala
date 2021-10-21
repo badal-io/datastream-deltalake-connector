@@ -1,7 +1,13 @@
 package io.badal.databricks
 
 import io.badal.databricks.config.DatastreamJobConf
-import io.badal.databricks.utils.{DataStreamSchema, DatastreamIO, MergeQueries}
+import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
+import io.badal.databricks.utils.{
+  DataStreamSchema,
+  DatastreamIO,
+  MergeQueries,
+  TableNameFormatter
+}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import pureconfig.ConfigSource
@@ -10,6 +16,7 @@ import pureconfig.ConfigSource
 import eu.timepit.refined.pureconfig._
 import pureconfig._
 import pureconfig.generic.auto._
+import pureconfig.module.enumeratum._
 
 object DatastreamDatabricksConnector {
 
@@ -24,7 +31,7 @@ object DatastreamDatabricksConnector {
     Logger.getRootLogger.setLevel(Level.ERROR)
 
     /** Create a spark session */
-    val spark = SparkSession.builder
+    implicit val spark = SparkSession.builder
       .appName("DatastreamReader")
       .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreate()
@@ -38,18 +45,26 @@ object DatastreamDatabricksConnector {
 
       /** Get a streaming Dataframe of Datastream records */
       val inputDf = DatastreamIO(
-        spark,
         datastreamTable,
         jobConf.datastream.fileReadConcurrency.value,
-        jobConf.generateRawCdcTable
+        jobConf.generateLogTable,
+        jobConf.checkpointDir,
+        jobConf.deltalake.schemaEvolution
       )
+
+      val targetTable =
+        TableNameFormatter.targetTableName(datastreamTable.table)
 
       /** Merge into target table */
       inputDf.writeStream
         .format("delta")
-        .foreachBatch(MergeQueries.upsertToDelta _)
+        .option(jobConf.deltalake.schemaEvolution)
+//        .option("checkpointLocation", s"/${jobConf.checkpointDir}/$targetTable")
+        .foreachBatch((df: DataFrame, batchId: Long) =>
+          MergeQueries
+            .upsertToDelta(df, batchId, jobConf.deltalake.schemaEvolution))
         .outputMode("update")
-        .start()
+        .start(s"/delta/$targetTable")
     }
 
     spark.streams.awaitAnyTermination()

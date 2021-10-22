@@ -1,13 +1,8 @@
 package io.badal.databricks.utils
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-
-import java.util
-import java.util.{Arrays, List}
-import java.util.stream.Collectors
 import io.badal.databricks.utils.DeltaSchemaMigration.DatastreamMetadataField
-import org.apache.avro.generic.GenericRecord
-import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
 

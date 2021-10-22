@@ -3,8 +3,8 @@ package io.badal.databricks.utils
 import io.badal.databricks.config.SchemaEvolutionStrategy
 import io.badal.databricks.datastream.DatastreamTable
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
-
 import SchemaEvolutionStrategy._
+import org.apache.log4j.Logger
 
 /**
   * Helper class to read Datastream files and return them as a DataFrame
@@ -15,6 +15,9 @@ import SchemaEvolutionStrategy._
   * 4) Add support for maxFileAge
   */
 object DatastreamIO {
+
+  val logger = Logger.getLogger(DatastreamIO.getClass)
+
   def apply(datastreamTable: DatastreamTable,
             fileReadConcurrency: Int,
             writeRawCdcTable: Boolean,
@@ -22,25 +25,23 @@ object DatastreamIO {
             schemaEvolutionStrategy: SchemaEvolutionStrategy)(
       implicit spark: SparkSession): DataFrame = {
 
+    /**
+      * Generates an intermediate delta table containing raw cdc events
+      */
     def logTableStreamFrom(df: DataFrame)(
         implicit sparkSession: SparkSession): DataFrame = {
       val logTableName = TableNameFormatter.logTableName(datastreamTable.table)
       val logTablePath = s"/delta/$logTableName"
 
-      println(s"will write raw cdc delta table $logTablePath")
+      logger.info(s"will write raw cdc delta table $logTablePath")
 
-      val emptyDF =
-        spark.createDataFrame(spark.sparkContext.emptyRDD[Row], df.schema)
-
-      emptyDF.write
-        .option(schemaEvolutionStrategy)
-        .format("delta")
-        .mode(SaveMode.Append)
-        .save(logTablePath)
+      DeltaSchemaMigration.updateSchemaByPath(logTablePath,
+                                              df.schema,
+                                              schemaEvolutionStrategy)(spark)
 
       df.writeStream
         .option(schemaEvolutionStrategy)
-//        .option("checkpointLocation", s"/$checkpointDir$logTablePath")
+        .option("checkpointLocation", s"dbfs:/$checkpointDir$logTablePath")
         .format("delta")
         .outputMode("append")
         .start(logTablePath)
@@ -49,8 +50,6 @@ object DatastreamIO {
         .format("delta")
         .load(logTablePath)
     }
-
-    println(s"loading ${avroFilePaths(datastreamTable.path)}")
 
     val inputDf = spark.readStream
       .format("avro")

@@ -48,9 +48,9 @@ object MergeQueries {
 
     /** First update the schema of the target table*/
     val targetTable =
-      DeltaSchemaMigration.updateSchema(targetTableName,
-                                        tableMetadata,
-                                        schemaEvolutionStrategy)
+      DeltaSchemaMigration.updateSchemaByName(targetTableName,
+                                              tableMetadata,
+                                              schemaEvolutionStrategy)
 
     val updateExp = toFieldMap(payloadFields, SrcPayloadTableAlias)
 

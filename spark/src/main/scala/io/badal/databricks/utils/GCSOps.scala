@@ -2,12 +2,9 @@ package io.badal.databricks.utils
 
 import com.google.cloud.storage.StorageOptions
 
-import org.apache.log4j.Logger
 import scala.collection.JavaConverters._
 
 object GCSOps {
-
-  private val logger = Logger.getLogger(this.getClass)
 
   def list(bucketName: String, path: String): Set[String] = {
     val storage = StorageOptions.getDefaultInstance.getService()

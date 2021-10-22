@@ -1,9 +1,7 @@
 package io.badal.databricks
 
 import io.badal.databricks.config.DatastreamJobConf
-import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
 import io.badal.databricks.utils.{
-  DataStreamSchema,
   DatastreamIO,
   MergeQueries,
   TableNameFormatter
@@ -59,7 +57,7 @@ object DatastreamDatabricksConnector {
       inputDf.writeStream
         .format("delta")
         .option(jobConf.deltalake.schemaEvolution)
-//        .option("checkpointLocation", s"/${jobConf.checkpointDir}/$targetTable")
+//        .option("checkpointLocation", s"dbfs:/${jobConf.checkpointDir}/$targetTable")
         .foreachBatch((df: DataFrame, batchId: Long) =>
           MergeQueries
             .upsertToDelta(df, batchId, jobConf.deltalake.schemaEvolution))

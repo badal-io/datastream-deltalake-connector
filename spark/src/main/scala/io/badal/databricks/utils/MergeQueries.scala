@@ -1,7 +1,8 @@
 package io.badal.databricks.utils
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.utils.DeltaSchemaMigration.DatastreamMetadataField
+import io.badal.databricks.delta.DeltaSchemaMigration
+import io.badal.databricks.delta.DeltaSchemaMigration.DatastreamMetadataField
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
@@ -41,7 +42,7 @@ object MergeQueries {
 
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
-    /** First update the schema of the target table*/
+    /** First update the schema of the target table */
     val targetTable =
       DeltaSchemaMigration.updateSchemaByName(targetTableName,
                                               tableMetadata,
@@ -89,7 +90,7 @@ object MergeQueries {
       .drop("row_num")
   }
 
-  /** Check if target is older than source using Datastream row metadata*/
+  /** Check if target is older than source using Datastream row metadata */
   private def buildTimestampCompareSql(orderingColumn: String,
                                        targetTable: String,
                                        sourceTable: String) = {
@@ -105,7 +106,7 @@ object MergeQueries {
 
   // TODO: Move this logic elsewhere
   private def payloadField(field: String) =
-    s"payload.${field}"
+    s"payload.$field"
 
   private def toFieldMap(fields: Seq[String],
                          srcTable: String): Map[String, String] =

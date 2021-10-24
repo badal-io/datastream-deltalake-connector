@@ -9,16 +9,15 @@ import org.apache.spark.sql.types.{
 }
 import org.apache.spark.sql.{DataFrame, Row}
 
-/** Describes everything we need to know about a Table to make a proper Merge Query */
+/**
+  * Description of a Datastream tables including all context required to execute a Delta merge
+  */
 case class TableMetadata(sourceType: DatastreamSource,
                          table: String,
                          database: String,
                          payloadPrimaryKeyFields: Seq[String],
-                         /** primary keys - are part of the stream message 'payload' object*/
                          orderByFieldsSchema: StructType,
-                         /** field that can be used to order messages */
-                         payloadSchema: StructType /** Payload schema*/
-) {
+                         payloadSchema: StructType) {
   lazy val orderByFields: Seq[String] = orderByFieldsSchema.fieldNames
 }
 
@@ -41,7 +40,9 @@ object TableMetadata {
     ))
   private val METADATA_DELETED = "_metadata_deleted"
 
-  /** Gets the TableMetadata by inspecting the first elements of a Dataframe*/
+  /**
+    * Return a TableMetadata by inspecting the first elements of the given DataFrame
+    */
   def fromDf(df: DataFrame): TableMetadata = {
     import org.apache.spark.sql.functions._
 

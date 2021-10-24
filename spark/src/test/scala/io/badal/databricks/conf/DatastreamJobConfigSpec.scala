@@ -9,7 +9,7 @@ import io.badal.databricks.config.{
   DeltalakeConf,
   SchemaEvolutionStrategy
 }
-import io.badal.databricks.datastream.DiscoveryBucket
+import io.badal.databricks.datastream.GCSDiscoveryBucket
 import org.scalatest.EitherValues._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -27,7 +27,7 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
     name = NonEmptyString.unsafeFrom("test-name"),
     startDate = Option(NonEmptyString.unsafeFrom("1970-01-01T00:00:00.00Z")),
     fileReadConcurrency = PosInt.unsafeFrom(2),
-    tableSource = DiscoveryBucket(
+    tableSource = GCSDiscoveryBucket(
       NonEmptyString.unsafeFrom("test-discovery-bucket"),
       Option(NonEmptyString.unsafeFrom("path/to/test/dir"))
     ),

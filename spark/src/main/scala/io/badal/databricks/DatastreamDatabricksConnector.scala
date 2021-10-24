@@ -39,7 +39,7 @@ object DatastreamDatabricksConnector {
 
     tables.foreach { datastreamTable =>
       logger.info(
-        s"defining stream for datastream table defined at ${datastreamTable.path}")
+        s"defining stream for datastream table defined at ${datastreamTable.tablePath}")
 
       /** Get a streaming Dataframe of Datastream records */
       val inputDf = DatastreamIO(
@@ -47,7 +47,8 @@ object DatastreamDatabricksConnector {
         jobConf.datastream.fileReadConcurrency.value,
         jobConf.generateLogTable,
         jobConf.checkpointDir,
-        jobConf.deltalake.schemaEvolution
+        jobConf.deltalake.schemaEvolution,
+        jobConf.datastream.readFormat
       )
 
       val targetTable =
@@ -67,45 +68,6 @@ object DatastreamDatabricksConnector {
     }
 
     spark.streams.awaitAnyTermination()
-    //    val latestChangeForEachKey = MergeQueries.getLatestRow(inputDf, "id", "source_timestamp")
-    //
-    //    val query = inputDf.writeStream
-    //      .format("delta")
-    //      .outputMode("append")
-    //      .option("checkpointLocation", "dbfs://checkpointPath")
-    //      .option("mergeSchema", "true")
-    //      //.toTable("")
-    //      .delta("/mnt/delta/events")
-    //    DeltaTable.forName("target")
-    //
-    //    val targetTable = DeltaTable.forPath(spark, "/data/votes2/")
-    //
-    //    voterTable.alias("t").merge(latestChangesDF.alias("s"), "t.id =s.payload.id").whenMatchedDelete(condition = "s.source_metadata.change_type = 'DELETE'") \
-    //    .whenMatchedUpdate(set = COLUMNS_MAP) \
-    //    .whenNotMatchedInsert(condition = "s.source_metadata.change_type != 'DELETE'", values = COLUMNS_MAP
-    //    )
-
-    /**
-      * "USING ({stagingViewSql}) AS {stagingAlias} ",
-      * "ON {joinCondition} ",
-      * "WHEN MATCHED AND {timestampCompareSql} AND {stagingAlias}.{deleteColumn}=True THEN DELETE ",// TODO entire block should be configurably removed
-      * "WHEN MATCHED AND {timestampCompareSql} THEN {mergeUpdateSql} ",
-      * "WHEN NOT MATCHED BY TARGET AND {stagingAlias}.{deleteColumn}!=True ",
-      * "THEN {mergeInsertSql}")
-      */
-    //    targetTable.as("t")
-    //      .merge(
-    //        latestChangeForEachKey.as("s"), "t.id = s.payload.id"
-    //      )
-    //      .whenMatched().updateAll()
-    //      .whenMatched()
-    //      .updateExpr(Map("key" -> "s.key", "value" -> "s.newValue"))
-    //      .whenNotMatched("s.deleted = false")
-    //      .insertExpr(Map("key" -> "s.key", "value" -> "s.newValue"))
-    //      .execute()
-
-    //  query.awaitTermination()
-
   }
 
 }

@@ -1,7 +1,6 @@
-package io.badal.databricks.utils
+package io.badal.databricks.google
 
 import com.google.cloud.storage.StorageOptions
-
 import scala.collection.JavaConverters._
 
 object GCSOps {

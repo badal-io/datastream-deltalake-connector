@@ -1,29 +1,15 @@
 package io.badal.databricks.utils
 
-import java.io.{File, IOException}
-import java.net.URL
-import java.util.{Locale, UUID}
-import org.scalatest.BeforeAndAfterEach
-import org.apache.spark.sql.test.{
-  SQLTestUtils,
-  SharedSparkSession,
-  TestSparkSession
-}
-import org.apache.spark.sql.{
-  AnalysisException,
-  DataFrame,
-  QueryTest,
-  Row,
-  SparkSession
-}
-import DirTestUtils._
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
+import io.badal.databricks.datastream.DataStreamSchema
+import io.badal.databricks.delta.MergeQueries
+import io.badal.databricks.utils.DirTestUtils._
 import io.delta.tables.DeltaTable
-import org.apache.spark.sql.delta.catalog.DeltaCatalog
 import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.{DataFrame, Row}
+import org.scalatest.BeforeAndAfterEach
 
-import scala.io.Source
+import java.util.Locale
 class MergeQueriesSpec
     extends MergeIntoSuiteBase
     with BeforeAndAfterEach
@@ -71,7 +57,7 @@ class MergeQueriesSpec
 
         val sourceDf = spark.read
           .option("multiline", "true")
-          .json(getClass.getResource("/events/records1.json").toString)
+          .json(getClass.getResource("/events/records2.json").toString)
 
         val emptyDF =
           spark.createDataFrame(spark.sparkContext.emptyRDD[Row],

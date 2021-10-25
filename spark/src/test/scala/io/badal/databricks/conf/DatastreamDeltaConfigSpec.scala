@@ -5,7 +5,7 @@ import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
 import io.badal.databricks.config.{
   DatastreamConf,
-  DatastreamJobConf,
+  DatastreamDeltaConf,
   DeltalakeConf,
   SchemaEvolutionStrategy
 }
@@ -21,7 +21,7 @@ import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.module.enumeratum._
 
-class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
+class DatastreamDeltaConfigSpec extends AnyFlatSpec with Matchers {
 
   val datastream = DatastreamConf(
     name = NonEmptyString.unsafeFrom("test-name"),
@@ -31,19 +31,21 @@ class DatastreamJobConfigSpec extends AnyFlatSpec with Matchers {
       NonEmptyString.unsafeFrom("test-discovery-bucket"),
       Option(NonEmptyString.unsafeFrom("path/to/test/dir"))
     ),
+    readFormat = NonEmptyString.unsafeFrom("avro")
   )
 
   val deltalake = DeltalakeConf(
     tableNamePrefix = "test-prefix",
     mergeFrequencyMinutes = PosInt.unsafeFrom(1),
-    Merge //SchemaEvolution.Merge
+    Merge
   )
 
   val validConf =
-    DatastreamJobConf(datastream, deltalake, true, "checkpoint")
+    DatastreamDeltaConf(datastream, deltalake, true, "checkpoint")
 
-  "reading a DatastreamJobConf" should "return a DatastreamJobConf for a valid typesafe configuration" in {
-    val res = ConfigSource.resources("test.conf").load[DatastreamJobConf]
+  "reading a DatastreamJobConf" should
+    "return a DatastreamJobConf for a valid typesafe configuration" in {
+    val res = ConfigSource.resources("test.conf").load[DatastreamDeltaConf]
     res.right.value should be(validConf)
   }
 }

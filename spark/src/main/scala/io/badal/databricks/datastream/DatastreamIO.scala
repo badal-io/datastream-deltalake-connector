@@ -1,9 +1,8 @@
-package io.badal.databricks.utils
+package io.badal.databricks.datastream
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.config.SchemaEvolutionStrategy._
-import io.badal.databricks.datastream.DatastreamTable
 import io.badal.databricks.delta.DeltaSchemaMigration
+import io.badal.databricks.utils.TableNameFormatter
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -19,26 +18,26 @@ object DatastreamIO {
 
   val logger = Logger.getLogger(DatastreamIO.getClass)
 
-  def apply(datastreamTable: DatastreamTable,
+  def apply(spark: SparkSession,
+            datastreamTable: DatastreamTable,
             fileReadConcurrency: Int,
             writeRawCdcTable: Boolean,
             checkpointDir: String,
             schemaEvolutionStrategy: SchemaEvolutionStrategy,
-            readFormat: String)(implicit spark: SparkSession): DataFrame = {
+            readFormat: String): DataFrame = {
 
     /**
       * Generates an intermediate delta table containing raw cdc events
       */
-    def logTableStreamFrom(df: DataFrame)(
-        implicit sparkSession: SparkSession): DataFrame = {
+    def logTableStreamFrom(df: DataFrame): DataFrame = {
       val logTableName = TableNameFormatter.logTableName(datastreamTable.table)
       val logTablePath = s"/delta/$logTableName"
 
       logger.info(s"will write raw cdc delta table $logTablePath")
 
       DeltaSchemaMigration.updateSchemaByPath(logTablePath,
-                                              df.schema,
-                                              schemaEvolutionStrategy)(spark)
+        df.schema,
+        schemaEvolutionStrategy)(spark)
 
       df.writeStream
         .option(schemaEvolutionStrategy)

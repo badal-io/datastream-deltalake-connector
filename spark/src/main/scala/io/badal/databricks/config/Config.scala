@@ -5,7 +5,7 @@ import eu.timepit.refined.types.numeric.PosInt
 
 import io.badal.databricks.datastream.TableProvider
 
-final case class DatastreamJobConf(
+final case class DatastreamDeltaConf(
     datastream: DatastreamConf,
     deltalake: DeltalakeConf,
     generateLogTable: Boolean,
@@ -17,7 +17,7 @@ final case class DatastreamConf(
     startDate: Option[NonEmptyString],
     fileReadConcurrency: PosInt,
     tableSource: TableProvider,
-    readFormat: String
+    readFormat: NonEmptyString
 )
 
 final case class DeltalakeConf(

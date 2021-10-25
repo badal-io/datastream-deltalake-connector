@@ -1,13 +1,8 @@
-package io.badal.databricks.utils
+package io.badal.databricks.delta
 
-import org.apache.spark.sql.types.{
-  LongType,
-  StringType,
-  StructField,
-  StructType,
-  TimestampType
-}
-import org.apache.spark.sql.{DataFrame, Row}
+import io.badal.databricks.datastream.{DataStreamSchema, DatastreamSource, MySQL, Oracle}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.types._
 
 /**
   * Description of a Datastream tables including all context required to execute a Delta merge

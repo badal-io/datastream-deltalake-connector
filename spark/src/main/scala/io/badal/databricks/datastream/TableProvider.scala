@@ -8,8 +8,8 @@ sealed trait TableProvider {
   def list(): Seq[DatastreamTable]
 
 }
-final case class GCSDiscoveryBucket(bucket: NonEmptyString,
-                                    path: Option[NonEmptyString])
+final case class DiscoveryBucket(bucket: NonEmptyString,
+                                 path: Option[NonEmptyString])
     extends TableProvider {
   override def list(): Seq[DatastreamTable] = {
     val pathOrEmpty = path.map("/" + _.value).getOrElse("")

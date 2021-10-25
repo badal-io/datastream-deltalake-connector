@@ -10,8 +10,6 @@ abstract class MergeIntoSuiteBase
     extends QueryTest
     with SharedSparkSession
     with BeforeAndAfterEach {
-  // with SQLTestUtils
-  //with DeltaTestUtilsForTempViews {
 
   import testImplicits._
   protected var tempDir: File = _

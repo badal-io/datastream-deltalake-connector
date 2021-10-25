@@ -1,8 +1,9 @@
-package io.badal.databricks.utils
+package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.delta.DeltaSchemaMigration
+import io.badal.databricks.datastream.DataStreamSchema
 import io.badal.databricks.delta.DeltaSchemaMigration.DatastreamMetadataField
+import io.badal.databricks.utils.TableNameFormatter
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
@@ -45,8 +46,8 @@ object MergeQueries {
     /** First update the schema of the target table */
     val targetTable =
       DeltaSchemaMigration.updateSchemaByName(targetTableName,
-                                              tableMetadata,
-                                              schemaEvolutionStrategy)
+        tableMetadata,
+        schemaEvolutionStrategy)
 
     val updateExp = toFieldMap(payloadFields, SrcPayloadTableAlias)
 
@@ -63,8 +64,8 @@ object MergeQueries {
       .merge(
         latestChangeForEachKey.as(SrcTableAlias),
         buildJoinConditions(tableMetadata.payloadPrimaryKeyFields,
-                            TargetTableAlias,
-                            SrcPayloadTableAlias)
+          TargetTableAlias,
+          SrcPayloadTableAlias)
       )
       .whenMatched(f"$timestampCompareExp AND $isDeleteExp")
       .delete()
@@ -76,7 +77,7 @@ object MergeQueries {
   }
 
   private def getLatestRow(df: DataFrame)(
-      implicit tableMetadata: TableMetadata): DataFrame = {
+    implicit tableMetadata: TableMetadata): DataFrame = {
     val pKeys = tableMetadata.payloadPrimaryKeyFields.map(payloadField)
 
     // TODO: handle deleted field

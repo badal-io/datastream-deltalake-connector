@@ -2,7 +2,6 @@ package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
 import io.badal.databricks.config.SchemaEvolutionStrategy._
-import io.badal.databricks.utils.TableMetadata
 import io.delta.tables.DeltaTable
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types.StructType

@@ -1,39 +1,18 @@
-package io.badal.databricks
+package io.badal.databricks.jobs
 
-import io.badal.databricks.config.DatastreamJobConf
-import io.badal.databricks.utils.{
-  DatastreamIO,
-  MergeQueries,
-  TableNameFormatter
-}
-import org.apache.log4j.{Level, Logger}
+import io.badal.databricks.config.DatastreamDeltaConf
+import io.badal.databricks.datastream.DatastreamIO
+import io.badal.databricks.delta.MergeQueries
+import io.badal.databricks.utils.TableNameFormatter
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import pureconfig.ConfigSource
 
-/* Don't remove, Intellij thinks they are unused but they are required */
-import eu.timepit.refined.pureconfig._
-import pureconfig._
-import pureconfig.generic.auto._
-import pureconfig.module.enumeratum._
+object DatastreamDeltaConnector {
 
-object DatastreamDatabricksConnector {
+  val logger = Logger.getLogger(DatastreamDeltaConnector.getClass)
 
-  val logger = Logger.getLogger(DatastreamDatabricksConnector.getClass)
-
-  def main(args: Array[String]): Unit = {
-
-    val jobConf: DatastreamJobConf =
-      ConfigSource.resources("demo.conf").loadOrThrow[DatastreamJobConf]
-
-    // TODO
-    Logger.getRootLogger.setLevel(Level.ERROR)
-
-    /** Create a spark session */
-    implicit val spark = SparkSession.builder
-      .appName("DatastreamReader")
-      .config("spark.sql.streaming.schemaInference", "true")
-      .getOrCreate()
-
+  def run(spark: SparkSession, jobConf: DatastreamDeltaConf): Unit = {
+    logger.info("starting...")
     // TODO: Remove - get Database from TableMetadata
     val tables = jobConf.datastream.tableSource.list()
 
@@ -43,12 +22,13 @@ object DatastreamDatabricksConnector {
 
       /** Get a streaming Dataframe of Datastream records */
       val inputDf = DatastreamIO(
+        spark,
         datastreamTable,
         jobConf.datastream.fileReadConcurrency.value,
         jobConf.generateLogTable,
         jobConf.checkpointDir,
         jobConf.deltalake.schemaEvolution,
-        jobConf.datastream.readFormat
+        jobConf.datastream.readFormat.value
       )
 
       val targetTable =
@@ -59,7 +39,7 @@ object DatastreamDatabricksConnector {
         .format("delta")
         .option(jobConf.deltalake.schemaEvolution)
         .option("checkpointLocation",
-                s"dbfs:/${jobConf.checkpointDir}/$targetTable")
+          s"${jobConf.checkpointDir}/$targetTable")
         .foreachBatch((df: DataFrame, batchId: Long) =>
           MergeQueries
             .upsertToDelta(df, batchId, jobConf.deltalake.schemaEvolution))
@@ -68,6 +48,8 @@ object DatastreamDatabricksConnector {
     }
 
     spark.streams.awaitAnyTermination()
+
   }
+
 
 }

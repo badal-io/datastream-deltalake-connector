@@ -15,11 +15,10 @@ class DeltaSchemaMigrationSpec
 
   test("target schema") {
     withTable(testTable) {
-      withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
-
         val sourceDf = readJsonRecords("/events/records1.json")
 
         val tableMetadata = TableMetadata.fromDf(sourceDf)
+
         DeltaSchemaMigration.updateSchemaByName(testTable, tableMetadata, Merge)
 
         val targetSchema = new StructType(
@@ -43,5 +42,4 @@ class DeltaSchemaMigrationSpec
         assert(readDeltaTableByName(testTable).schema == targetSchema)
       }
     }
-  }
 }

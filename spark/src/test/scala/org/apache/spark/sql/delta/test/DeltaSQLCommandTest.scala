@@ -9,7 +9,8 @@ import org.apache.spark.sql.test.{SharedSparkSession, TestSparkSession}
 
 // Copied from Delta
 /**
-  * Because `TestSparkSession` doesn't pick up the conf `spark.sql.extensions` in Spark 2.4.x, we use
+  * Because `TestSparkSession` doesn't pick up the conf `spark.sql.extensions`
+  * in Spark 2.4.x, we use
   * this class to inject Delta's extension in our tests.
   *
   * @see https://issues.apache.org/jira/browse/SPARK-25003

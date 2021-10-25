@@ -1,4 +1,4 @@
-package io.badal.databricks.utils
+package io.badal.databricks.delta
 
 object TableNameFormatter {
   def targetTableName(tableName: String): String = sanitizedTable(tableName)

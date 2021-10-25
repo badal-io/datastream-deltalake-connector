@@ -2,8 +2,7 @@ package io.badal.databricks.jobs
 
 import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.datastream.DatastreamIO
-import io.badal.databricks.delta.MergeQueries
-import io.badal.databricks.utils.TableNameFormatter
+import io.badal.databricks.delta.{MergeQueries, TableNameFormatter}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -38,8 +37,7 @@ object DatastreamDeltaConnector {
       inputDf.writeStream
         .format("delta")
         .option(jobConf.deltalake.schemaEvolution)
-        .option("checkpointLocation",
-          s"${jobConf.checkpointDir}/$targetTable")
+        .option("checkpointLocation", s"${jobConf.checkpointDir}/$targetTable")
         .foreachBatch((df: DataFrame, batchId: Long) =>
           MergeQueries
             .upsertToDelta(df, batchId, jobConf.deltalake.schemaEvolution))
@@ -50,6 +48,5 @@ object DatastreamDeltaConnector {
     spark.streams.awaitAnyTermination()
 
   }
-
 
 }

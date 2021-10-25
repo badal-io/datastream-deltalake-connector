@@ -1,8 +1,7 @@
 package io.badal.databricks.datastream
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.delta.DeltaSchemaMigration
-import io.badal.databricks.utils.TableNameFormatter
+import io.badal.databricks.delta.{DeltaSchemaMigration, TableNameFormatter}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -36,8 +35,8 @@ object DatastreamIO {
       logger.info(s"will write raw cdc delta table $logTablePath")
 
       DeltaSchemaMigration.updateSchemaByPath(logTablePath,
-        df.schema,
-        schemaEvolutionStrategy)(spark)
+                                              df.schema,
+                                              schemaEvolutionStrategy)(spark)
 
       df.writeStream
         .option(schemaEvolutionStrategy)

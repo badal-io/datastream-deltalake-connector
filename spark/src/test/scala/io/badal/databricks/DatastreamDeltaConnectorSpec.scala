@@ -2,7 +2,11 @@ package io.badal.databricks
 
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import io.badal.databricks.config.{DatastreamConf, DatastreamDeltaConf, DeltalakeConf}
+import io.badal.databricks.config.{
+  DatastreamConf,
+  DatastreamDeltaConf,
+  DeltalakeConf
+}
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
 import io.badal.databricks.datastream.{DiscoveryBucket, LocalDirectory}
 import io.badal.databricks.jobs.DatastreamDeltaConnector
@@ -20,9 +24,9 @@ import pureconfig.module.enumeratum._
 
 @Ignore
 class DatastreamDeltaConnectorSpec
-  extends MergeIntoSuiteBase
-  with BeforeAndAfterEach
-  with DeltaSQLCommandTest {
+    extends MergeIntoSuiteBase
+    with BeforeAndAfterEach
+    with DeltaSQLCommandTest {
 
   val tablesPath = getClass.getResource("/tables").getPath
 
@@ -60,12 +64,15 @@ class DatastreamDeltaConnectorSpec
         ("spark.databricks.delta.schema.autoMerge.enabled", "true")
       ) {
         val jobConf =
-          DatastreamDeltaConf(datastream, deltalake, false, s"$tempPath/checkpoint")
+          DatastreamDeltaConf(datastream,
+                              deltalake,
+                              false,
+                              s"$tempPath/checkpoint")
         DatastreamDeltaConnector.run(spark, jobConf)
 
         checkAnswer(
           TestOps.readDeltaTableByName("test_customers").select("id", "name"),
-            Row("1", "Foo1") ::
+          Row("1", "Foo1") ::
             Nil
         )
       }

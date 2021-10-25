@@ -57,7 +57,6 @@ object DirTestUtils {
   def deleteRecursively(file: File): Unit = {
     if (file != null) {
       JavaUtils.deleteRecursively(file)
-      //ShutdownHookManager.removeShutdownDeleteDir(file)
     }
   }
 }

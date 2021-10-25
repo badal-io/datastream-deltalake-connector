@@ -1,12 +1,7 @@
-package io.badal.databricks.utils.queries
+package io.badal.databricks.delta
 
-import io.badal.databricks.utils.MySQL
-import org.apache.spark.sql.types.{
-  LongType,
-  StructField,
-  StructType,
-  TimestampType
-}
+import io.badal.databricks.datastream.MySQL
+import org.apache.spark.sql.types.{LongType, StructField, StructType, TimestampType}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

@@ -1,14 +1,8 @@
-package io.badal.databricks.utils
+package io.badal.databricks.delta
 
-import io.badal.databricks.utils.queries.TableMetadata
+import io.badal.databricks.utils.MergeIntoSuiteBase
 import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
-import org.apache.spark.sql.types.{
-  LongType,
-  StringType,
-  StructField,
-  StructType,
-  TimestampType
-}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.scalatest.BeforeAndAfterEach
 
 class TableMetadataSpec

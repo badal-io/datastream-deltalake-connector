@@ -1,8 +1,6 @@
-package io.badal.databricks.utils.queries
+package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.utils.DeltaSchemaMigration.DatastreamMetadataField
-import io.badal.databricks.utils.{DeltaSchemaMigration, TableNameFormatter}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
@@ -42,7 +40,7 @@ object MergeQueries {
 
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
-    /** First update the schema of the target table*/
+    /** First update the schema of the target table */
     val targetTable =
       DeltaSchemaMigration.updateSchemaByName(targetTableName,
                                               tableMetadata,
@@ -96,23 +94,23 @@ object MergeQueries {
       .drop("row_num")
   }
 
-  /** Check if target is older than source using Datastream row metadata*/
-  private[queries] def buildTimestampCompareSql(tableMetadata: TableMetadata,
-                                                targetTable: String,
-                                                sourceTable: String) = {
+  /** Check if target is older than source using Datastream row metadata */
+  private[delta] def buildTimestampCompareSql(tableMetadata: TableMetadata,
+                                              targetTable: String,
+                                              sourceTable: String) = {
     val orderingColumn = tableMetadata.orderByFields.head
     f"$targetTable.${DeltaSchemaMigration.datastreamMetadataTargetFieldName(
       orderingColumn._1)} <= $sourceTable.${orderingColumn._1}"
   }
 
-  private[queries] def buildJoinConditions(tableMetadata: TableMetadata,
-                                           targetTableAlias: String,
-                                           sourceTableAlias: String) =
+  private[delta] def buildJoinConditions(tableMetadata: TableMetadata,
+                                         targetTableAlias: String,
+                                         sourceTableAlias: String) =
     tableMetadata.payloadPrimaryKeyFields
       .map(col => f"$targetTableAlias.$col = $sourceTableAlias.$col")
       .mkString(" AND ")
 
-  private[queries] def buildUpdateExp(
+  private[delta] def buildUpdateExp(
       tableMetadata: TableMetadata,
       sourceTableAlias: String): Map[String, String] = {
     val payloadFields: Map[String, String] = tableMetadata.payloadFields

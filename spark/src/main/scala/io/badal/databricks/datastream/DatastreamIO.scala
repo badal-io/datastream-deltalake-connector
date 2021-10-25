@@ -1,10 +1,9 @@
-package io.badal.databricks.utils
+package io.badal.databricks.datastream
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.datastream.DatastreamTable
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
-import SchemaEvolutionStrategy._
+import io.badal.databricks.delta.{DeltaSchemaMigration, TableNameFormatter}
 import org.apache.log4j.Logger
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
   * Helper class to read Datastream files and return them as a DataFrame
@@ -18,18 +17,18 @@ object DatastreamIO {
 
   val logger = Logger.getLogger(DatastreamIO.getClass)
 
-  def apply(datastreamTable: DatastreamTable,
+  def apply(spark: SparkSession,
+            datastreamTable: DatastreamTable,
             fileReadConcurrency: Int,
             writeRawCdcTable: Boolean,
             checkpointDir: String,
-            schemaEvolutionStrategy: SchemaEvolutionStrategy)(
-      implicit spark: SparkSession): DataFrame = {
+            schemaEvolutionStrategy: SchemaEvolutionStrategy,
+            readFormat: String): DataFrame = {
 
     /**
       * Generates an intermediate delta table containing raw cdc events
       */
-    def logTableStreamFrom(df: DataFrame)(
-        implicit sparkSession: SparkSession): DataFrame = {
+    def logTableStreamFrom(df: DataFrame): DataFrame = {
       val logTableName = TableNameFormatter.logTableName(datastreamTable.table)
       val logTablePath = s"/delta/$logTableName"
 
@@ -41,7 +40,7 @@ object DatastreamIO {
 
       df.writeStream
         .option(schemaEvolutionStrategy)
-        .option("checkpointLocation", s"dbfs:/$checkpointDir$logTablePath")
+        .option("checkpointLocation", s"$checkpointDir$logTablePath")
         .format("delta")
         .outputMode("append")
         .start(logTablePath)
@@ -52,15 +51,15 @@ object DatastreamIO {
     }
 
     val inputDf = spark.readStream
-      .format("avro")
+      .format(readFormat)
       .option("ignoreExtension", true)
       .option("maxFilesPerTrigger", fileReadConcurrency)
-      .load(avroFilePaths(datastreamTable.path))
+      .load(filePaths(datastreamTable.tablePath))
 
     if (writeRawCdcTable) logTableStreamFrom(inputDf)
     else inputDf
   }
 
-  private def avroFilePaths(inputBucket: String): String =
-    s"gs://$inputBucket/*/*/*/*/*"
+  private def filePaths(path: String): String =
+    s"$path/*/*/*/*/*"
 }

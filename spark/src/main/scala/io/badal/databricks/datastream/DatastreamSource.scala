@@ -1,4 +1,4 @@
-package io.badal.databricks.utils
+package io.badal.databricks.datastream
 
 sealed trait DatastreamSource
 object MySQL extends DatastreamSource

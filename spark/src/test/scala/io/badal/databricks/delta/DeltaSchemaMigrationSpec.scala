@@ -1,15 +1,9 @@
-package io.badal.databricks.utils
+package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
-import io.badal.databricks.utils.queries.{MergeQueries, TableMetadata}
+import io.badal.databricks.utils.MergeIntoSuiteBase
 import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
-import org.apache.spark.sql.types.{
-  LongType,
-  StringType,
-  StructField,
-  StructType,
-  TimestampType
-}
+import org.apache.spark.sql.types._
 import org.scalatest.BeforeAndAfterEach
 
 class DeltaSchemaMigrationSpec

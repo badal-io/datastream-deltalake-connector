@@ -1,13 +1,12 @@
-package io.badal.databricks.utils.queries
+package io.badal.databricks.delta
 
-import io.badal.databricks.utils.queries.TableMetadata.getOrderByFields
-import io.badal.databricks.utils.{
+import io.badal.databricks.datastream.{
   DataStreamSchema,
   DatastreamSource,
   MySQL,
-  Oracle,
-  queries
+  Oracle
 }
+import io.badal.databricks.delta
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types._
 
@@ -16,39 +15,20 @@ case class TableMetadata(sourceType: DatastreamSource,
                          table: String,
                          database: String,
                          payloadPrimaryKeyFields: Seq[String],
-                         /** primary keys - are part of the stream message 'payload' object*/
+                         /** primary keys - are part of the stream message 'payload' object */
                          orderByFields: Seq[(String, DataType)],
                          /** ordered fields that can be used to order messages */
-                         payloadSchema: StructType, /** Payload schema*/
-                         payloadFields: Seq[String]) {
-  //lazy val orderByFields: Seq[String] = orderByFieldsSchema.fieldNames
-}
+                         payloadSchema: StructType, /** Payload schema */
+                         payloadFields: Seq[String])
 
 object TableMetadata {
-  private[queries] val ORACLE_ORDER_BY_FIELDS =
+  private[delta] val ORACLE_ORDER_BY_FIELDS =
     Seq("source_timestamp" -> TimestampType, "source_metadata.scn" -> LongType)
-  private[queries] val MYSQL_ORDER_BY_FIELDS =
+  private[delta] val MYSQL_ORDER_BY_FIELDS =
     Seq("source_timestamp" -> TimestampType,
         "source_metadata.log_file" -> StringType,
         "source_metadata.log_position" -> LongType)
 
-  // TODO: Flatten out the fields when writing to target instead of using nested structure
-//  private[queries] val ORACLE_ORDER_BY_FIELDS_SCHEMA = new StructType(
-//    Array(
-//      StructField("source_timestamp", TimestampType, nullable = false),
-//      StructField("source_metadata",  new StructType( Array(
-//        StructField("scn", LongType, nullable = false)
-//      ))
-//      )
-//    ))
-//  private[queries] val MYSQL_ORDER_BY_FIELDS_SCHEMA = new StructType(
-//    Array(
-//      StructField("source_timestamp", TimestampType, nullable = false),
-//      StructField("source_metadata",  new StructType( Array(
-//        StructField("log_file", StringType, nullable = false),
-//        StructField("log_position", LongType, nullable = false)
-//      )))
-//    ))
   private val METADATA_DELETED = "_metadata_deleted"
 
   /** Gets the TableMetadata by inspecting the first elements of a Dataframe */
@@ -69,7 +49,7 @@ object TableMetadata {
 
     val source = getSourceTypeFromReadMethod(head.getAs[String]("read_method"))
 
-    queries.TableMetadata(
+    delta.TableMetadata(
       sourceType = source,
       table = head.getAs("table"),
       database = head.getAs("database"),

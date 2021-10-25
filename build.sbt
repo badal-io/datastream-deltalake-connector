@@ -48,6 +48,7 @@ lazy val commonSettings = Seq(
   organizationName := "badal.io",
   libraryDependencies ++= library.commonDeps ++ library.testDeps,
   resolvers ++= Seq(
+      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
   ),
 )
 
@@ -59,6 +60,7 @@ lazy val spark = Project(id = "spark", base = file("spark"))
   .settings(testSettings)
   .settings(scalafmtSettings)
   .settings(assemblySettings)
+  .settings(scalaStyleSettings)
   .enablePlugins(AssemblyPlugin)
   .settings(name := "datastream-deltalake-spark-connector",
     scalaSource in Test := baseDirectory.value / "src/test/scala",
@@ -68,8 +70,6 @@ lazy val spark = Project(id = "spark", base = file("spark"))
 lazy val testSettings = Seq(
   fork in Test := true,
 )
-
-lazy val scalafmtSettings = Seq(scalafmtOnCompile := true)
 
 lazy val commonScalacOptions = Seq(
   "-deprecation",
@@ -102,3 +102,26 @@ lazy val assemblySettings = Seq(
       oldStrategy(x)
   }
 )
+
+lazy val scalafmtSettings = Seq(scalafmtOnCompile := true)
+
+/*
+ ***********************
+ * ScalaStyle settings *
+ ***********************
+ */
+ThisBuild / scalastyleConfig := baseDirectory.value / "scalastyle-config.xml"
+
+lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
+lazy val testScalastyle = taskKey[Unit]("testScalastyle")
+
+lazy val scalaStyleSettings = Seq(
+  compileScalastyle := (Compile / scalastyle).toTask("").value,
+
+  Compile / compile := ((Compile / compile) dependsOn compileScalastyle).value,
+
+  testScalastyle := (Test / scalastyle).toTask("").value,
+
+  Test / test := ((Test / test) dependsOn testScalastyle).value
+)
+

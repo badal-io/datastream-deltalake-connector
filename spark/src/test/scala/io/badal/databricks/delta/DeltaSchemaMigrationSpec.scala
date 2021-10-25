@@ -15,31 +15,31 @@ class DeltaSchemaMigrationSpec
 
   test("target schema") {
     withTable(testTable) {
-        val sourceDf = readJsonRecords("/events/records1.json")
+      val sourceDf = readJsonRecords("/events/records1.json")
 
-        val tableMetadata = TableMetadata.fromDf(sourceDf)
+      val tableMetadata = TableMetadata.fromDf(sourceDf)
 
-        DeltaSchemaMigration.updateSchemaByName(testTable, tableMetadata, Merge)
+      DeltaSchemaMigration.updateSchemaByName(testTable, tableMetadata, Merge)
 
-        val targetSchema = new StructType(
-          Array(
-            StructField("address", StringType, true),
-            StructField("gender", StringType, true),
-            StructField("id", StringType, true),
-            StructField("name", StringType, true),
-            // TODO: nullable should actually be false - need to create the table firsts
-            StructField("datastream_metadata_source_timestamp",
-                        TimestampType,
-                        true),
-            StructField("datastream_metadata_source_metadata_log_file",
-                        StringType,
-                        true),
-            StructField("datastream_metadata_source_metadata_log_position",
-                        LongType,
-                        true)
-          ))
+      val targetSchema = new StructType(
+        Array(
+          StructField("address", StringType, true),
+          StructField("gender", StringType, true),
+          StructField("id", StringType, true),
+          StructField("name", StringType, true),
+          // TODO: nullable should actually be false - need to create the table firsts
+          StructField("datastream_metadata_source_timestamp",
+                      TimestampType,
+                      true),
+          StructField("datastream_metadata_source_metadata_log_file",
+                      StringType,
+                      true),
+          StructField("datastream_metadata_source_metadata_log_position",
+                      LongType,
+                      true)
+        ))
 
-        assert(readDeltaTableByName(testTable).schema == targetSchema)
-      }
+      assert(readDeltaTableByName(testTable).schema == targetSchema)
     }
+  }
 }

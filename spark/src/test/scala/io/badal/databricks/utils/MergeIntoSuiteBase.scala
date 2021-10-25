@@ -3,7 +3,6 @@ package io.badal.databricks.utils
 import java.io.File
 
 import io.badal.databricks.utils.DirTestUtils.{createTempDir, deleteRecursively}
-import io.badal.databricks.utils.TestUtils.getClass
 import org.apache.spark.sql.{DataFrame, QueryTest, SparkSession}
 import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession}
 import org.scalatest.BeforeAndAfterEach

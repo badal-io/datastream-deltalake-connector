@@ -39,10 +39,10 @@ object DeltaSchemaMigration {
                          tableMetadata: TableMetadata,
                          schemaEvolutionStrategy: SchemaEvolutionStrategy)(
       implicit spark: SparkSession): DeltaTable = {
-     // TODO There may be a cleaner way to do this - instead of always appending an empty Dataframe,
-     //    may want to first check if schema has changed
+    // TODO There may be a cleaner way to do this - instead of always appending an empty Dataframe,
+    //    may want to first check if schema has changed
     // Though it is quite possible that DeltaLake takes care of these optimizations under the hood
-     // see the commented out migrateTableSchema function bellow for another way of doing this */
+    // see the commented out migrateTableSchema function bellow for another way of doing this */
     val schema = buildTargetSchema(tableMetadata)
 
     updateSchemaByName(tableName, schema, schemaEvolutionStrategy)
@@ -103,5 +103,3 @@ object DeltaSchemaMigration {
     Try(DeltaTable.forName("target")).isSuccess
 
 }
-
-

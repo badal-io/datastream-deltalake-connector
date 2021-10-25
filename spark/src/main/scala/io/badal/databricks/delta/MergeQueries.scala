@@ -1,6 +1,7 @@
 package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
+import io.badal.databricks.delta.DeltaSchemaMigration.datastreamMetadataTargetFieldName
 import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
@@ -99,8 +100,7 @@ object MergeQueries {
                                               targetTable: String,
                                               sourceTable: String) = {
     val orderingColumn = tableMetadata.orderByFields.head
-    f"$targetTable.${DeltaSchemaMigration.datastreamMetadataTargetFieldName(
-      orderingColumn._1)} <= $sourceTable.${orderingColumn._1}"
+    f"$targetTable.${datastreamMetadataTargetFieldName(orderingColumn._1)} <= $sourceTable.${orderingColumn._1}"
   }
 
   private[delta] def buildJoinConditions(tableMetadata: TableMetadata,
@@ -114,20 +114,18 @@ object MergeQueries {
       tableMetadata: TableMetadata,
       sourceTableAlias: String): Map[String, String] = {
     val payloadFields: Map[String, String] = tableMetadata.payloadFields
-      .map(field => (s"$field" -> s"$sourceTableAlias.payload.$field"))
+      .map(field => field -> s"$sourceTableAlias.payload.$field")
       .toMap
-    val metadataFields: Map[String, String] =
-      tableMetadata.orderByFields
-        .map(
-          field =>
-            (s"${DeltaSchemaMigration.datastreamMetadataTargetFieldName(
-              field._1)}" -> s"$sourceTableAlias.${field._1}"))
-        .toMap
+    val metadataFields: Map[String, String] = tableMetadata.orderByFields.map {
+      case (name, _) =>
+        datastreamMetadataTargetFieldName(name) -> s"$sourceTableAlias.$name"
+    }.toMap
+
     payloadFields ++ metadataFields
   }
 
   // TODO: Move this logic elsewhere
   private def payloadField(field: String) =
-    s"payload.${field}"
+    s"payload.$field"
 
 }

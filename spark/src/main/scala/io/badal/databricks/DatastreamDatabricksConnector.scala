@@ -1,11 +1,8 @@
 package io.badal.databricks
 
 import io.badal.databricks.config.DatastreamJobConf
-import io.badal.databricks.utils.{
-  DatastreamIO,
-  MergeQueries,
-  TableNameFormatter
-}
+import io.badal.databricks.utils.queries.MergeQueries
+import io.badal.databricks.utils.{DatastreamIO, TableNameFormatter}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import pureconfig.ConfigSource

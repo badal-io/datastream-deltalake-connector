@@ -2,7 +2,7 @@
   {
     "uuid": "8546a123-e6bc-49ca-b0c4-249000010000",
     "read_timestamp": "2021-05-16T01:13:01.000Z",
-    "source_timestamp": "2021-05-16T01:13:01.000Z",
+    "source_timestamp": "2021-05-26T01:13:01.000Z",
     "object": "demo_inventory.voters",
     "read_method": "mysql-cdc-binlog",
     "stream_name": "projects/472383905713/locations/us-central1/streams/databricks-poc",
@@ -15,12 +15,12 @@
       ],
       "log_file": "mysql-bin.000002",
       "log_position": 28460861,
-      "change_type": "INSERT",
+      "change_type": "UPDATE-INSERT",
       "is_deleted": false
     },
     "payload": {
       "id": "915725144",
-      "name": "Brianna Tucker",
+      "name": "Brianna Smith",
       "address": "0552 Tony Viaduct\nWest Anita, NH 37063",
       "gender": "t"
     }
@@ -40,13 +40,13 @@
         "id"
       ],
       "log_file": "mysql-bin.000002",
-      "log_position": 28461209,
-      "change_type": "INSERT",
+      "log_position": 28461219,
+      "change_type": "UPDATE-INSERT",
       "is_deleted": false
     },
     "payload": {
       "id": "993488433",
-      "name": "Allison Dalton",
+      "name": "Allison Smith",
       "address": "74412 Nelson Villages\nPort Benjamin, RI 74308",
       "gender": "m"
     }

@@ -15,12 +15,12 @@
       ],
       "log_file": "mysql-bin.000002",
       "log_position": 28460861,
-      "change_type": "INSERT",
+      "change_type": "UPDATE-INSERT",
       "is_deleted": false
     },
     "payload": {
       "id": "915725144",
-      "name": "Brianna Tucker",
+      "name": "Brianna Smith",
       "address": "0552 Tony Viaduct\nWest Anita, NH 37063",
       "gender": "t"
     }
@@ -41,12 +41,12 @@
       ],
       "log_file": "mysql-bin.000002",
       "log_position": 28461209,
-      "change_type": "INSERT",
+      "change_type": "UPDATE-INSERT",
       "is_deleted": false
     },
     "payload": {
       "id": "993488433",
-      "name": "Allison Dalton",
+      "name": "Allison Smith",
       "address": "74412 Nelson Villages\nPort Benjamin, RI 74308",
       "gender": "m"
     }

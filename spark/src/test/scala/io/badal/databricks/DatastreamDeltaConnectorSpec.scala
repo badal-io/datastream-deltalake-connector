@@ -4,13 +4,15 @@ import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.{DatastreamConf, DatastreamDeltaConf, DeltalakeConf}
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
-import io.badal.databricks.datastream.{DiscoveryBucket, LocalDirectory}
+import io.badal.databricks.datastream.LocalDirectory
 import io.badal.databricks.jobs.DatastreamDeltaConnector
 import io.badal.databricks.utils.DirTestUtils.{createTempDir, deleteRecursively}
 import io.badal.databricks.utils.{MergeIntoSuiteBase, TestOps}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
 import org.scalatest.{BeforeAndAfterEach, Ignore}
+
+import java.io.File
 
 /* do not remove */
 import eu.timepit.refined.pureconfig._
@@ -18,13 +20,14 @@ import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.module.enumeratum._
 
-@Ignore
 class DatastreamDeltaConnectorSpec
   extends MergeIntoSuiteBase
   with BeforeAndAfterEach
   with DeltaSQLCommandTest {
 
-  val tablesPath = getClass.getResource("/tables").getPath
+  val tablesPath = """
+    |/Users/stevendeutscher/git/datastream-deltalake-connector/spark/src/test/resources/tables
+    |""".stripMargin.replaceAll("\n", "")
 
   val datastream = DatastreamConf(
     name = NonEmptyString.unsafeFrom("datastream-delta-connector-test"),

@@ -107,7 +107,7 @@ class MergeQueriesSpec
             // not changed since timestamp is the same as target
             Row("915725144", "Brianna Tucker") ::
             // Deleted
-            Row("993488433", "Allison Smith") ::
+          //  Row("993488433", "Allison Smith") ::
             Nil
         )
       }

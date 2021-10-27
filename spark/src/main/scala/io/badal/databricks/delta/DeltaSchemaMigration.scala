@@ -9,9 +9,6 @@ import org.apache.spark.sql.types.{StructField, StructType}
 
 object DeltaSchemaMigration {
 
-  case class DeltaTarget(logTableOpt: Option[DeltaTable],
-                         mergeTable: DeltaTable)
-
   /** A struct field that is added to the target table to maintain important Datastream metadata */
   val DatastreamMetadataField = "datastream_metadata"
 

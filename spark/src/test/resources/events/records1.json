@@ -146,7 +146,7 @@
       "log_file": "mysql-bin.000002",
       "log_position": 28463530,
       "change_type": "DELETE",
-      "is_deleted": false
+      "is_deleted": true
     },
     "payload": {
       "id": "486570281",

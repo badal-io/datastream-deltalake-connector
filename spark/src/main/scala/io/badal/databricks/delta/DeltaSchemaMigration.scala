@@ -106,11 +106,7 @@ object DeltaSchemaMigration {
   /** Append Metadata fields */
   def buildTargetSchema(tableMetadata: TableMetadata): StructType =
     tableMetadata.orderByFields.foldLeft(tableMetadata.payloadSchema) {
-      case (schema, (field, fieldType)) =>
-        schema.add(
-          StructField(datastreamMetadataTargetFieldName(field),
-                      fieldType,
-                      nullable = false))
+      case (schema, field) => schema.add(field.getTargetFieldSchema)
     }
 
   /** Flatten out and rename datastream metadata fields when writing to target */

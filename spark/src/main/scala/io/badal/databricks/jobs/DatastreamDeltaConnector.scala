@@ -19,7 +19,7 @@ object DatastreamDeltaConnector {
 
     val tables = jobConf.datastream.tableSource.list()
 
-    DeltaSchemaMigration.createAll(tables, jobConf, spark)
+//    DeltaSchemaMigration.createAll(tables, jobConf, spark)
 
     tables.foreach { datastreamTable =>
       logger.info(

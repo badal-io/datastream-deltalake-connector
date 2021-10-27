@@ -18,7 +18,7 @@ object DatastreamDeltaStreamingJob {
   def main(args: Array[String]): Unit = {
     val jobConf: DatastreamDeltaConf =
       ConfigSource
-        .resources("application.conf")
+        .resources("local.conf")
         .loadOrThrow[DatastreamDeltaConf]
 
     // TODO
@@ -31,7 +31,7 @@ object DatastreamDeltaStreamingJob {
       .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
       .config("spark.sql.catalog.spark_catalog",
               "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-//      .master("local[*]")
+      .master("local[*]")
       .getOrCreate()
 
     DatastreamDeltaConnector.run(spark, jobConf)

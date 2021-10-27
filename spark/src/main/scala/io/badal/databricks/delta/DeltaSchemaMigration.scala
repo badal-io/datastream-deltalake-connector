@@ -11,9 +11,6 @@ import scala.util.Try
 
 object DeltaSchemaMigration {
 
-  /** A struct field that is added to the target table to maintain important Datastream metadata */
-  val DatastreamMetadataField = "datastream_metadata"
-
   val log = Logger.getLogger(getClass.getName)
 
 //  def createTableIfDoesNotExist(tableName: String, schema: StructType)(
@@ -88,16 +85,8 @@ object DeltaSchemaMigration {
   /** Append Meetadata fields */
   def buildTargetSchema(tableMetadata: TableMetadata): StructType =
     tableMetadata.orderByFields.foldLeft(tableMetadata.payloadSchema) {
-      case (schema, (field, fieldType)) =>
-        schema.add(
-          StructField(datastreamMetadataTargetFieldName(field),
-                      fieldType,
-                      nullable = false))
+      case (schema, field) => schema.add(field.getTargetFieldSchema)
     }
-
-  /** Flatten out and rename datastream metadata fields when writing to target */
-  def datastreamMetadataTargetFieldName(field: String): String =
-    s"${DatastreamMetadataField}_${field.replace(".", "_")}"
 
   private def doesTableExist(tableName: String): Boolean =
     Try(DeltaTable.forName("target")).isSuccess

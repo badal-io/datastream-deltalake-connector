@@ -16,18 +16,21 @@ case class TableMetadata(sourceType: DatastreamSource,
                          database: String,
                          payloadPrimaryKeyFields: Seq[String],
                          /** primary keys - are part of the stream message 'payload' object */
-                         orderByFields: Seq[(String, DataType)],
+                         orderByFields: Seq[DatastreamMetadataColumn],
                          /** ordered fields that can be used to order messages */
                          payloadSchema: StructType, /** Payload schema */
                          payloadFields: Seq[String])
 
 object TableMetadata {
   private[delta] val ORACLE_ORDER_BY_FIELDS =
-    Seq("source_timestamp" -> TimestampType, "source_metadata.scn" -> LongType)
+    Seq(DatastreamMetadataColumn("source_timestamp", TimestampType),
+        DatastreamMetadataColumn("source_metadata.scn", LongType))
   private[delta] val MYSQL_ORDER_BY_FIELDS =
-    Seq("source_timestamp" -> TimestampType,
-        "source_metadata.log_file" -> StringType,
-        "source_metadata.log_position" -> LongType)
+    Seq(
+      DatastreamMetadataColumn("source_timestamp", TimestampType),
+      DatastreamMetadataColumn("source_metadata.log_file", StringType),
+      DatastreamMetadataColumn("source_metadata.log_position", LongType)
+    )
 
   private val METADATA_DELETED = "_metadata_deleted"
 
@@ -68,7 +71,7 @@ object TableMetadata {
     }
 
   private def getOrderByFields(
-      source: DatastreamSource): Seq[(String, DataType)] =
+      source: DatastreamSource): Seq[DatastreamMetadataColumn] =
     source match {
       case MySQL  => MYSQL_ORDER_BY_FIELDS
       case Oracle => ORACLE_ORDER_BY_FIELDS

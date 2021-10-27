@@ -51,8 +51,11 @@ object MergeQueries {
     val timestampCompareExp =
       buildTimestampCompareSql(tableMetadata, TargetTableAlias, SrcTableAlias)
 
-    val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
-    val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
+//    val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
+//    val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
+
+    val isDeleteExp = "s.source_metadata.is_deleted = true"
+    val isNotDeleteExp = "s.source_metadata.is_deleted = false"
 
     log.info(
       s""" run MERGE with

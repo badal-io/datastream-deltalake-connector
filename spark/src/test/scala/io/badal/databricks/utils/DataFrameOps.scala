@@ -17,19 +17,29 @@ object DataFrameOps {
     }
 
     def changeNameTo(id: String, name: String): DataFrame = {
+      replaceNestedColumnById(id, "payload", "name", name)
+    }
+    def markDeleted(id: String): DataFrame = {
+      replaceNestedColumnById(id, "source_metadata", "is_deleted", true)
+    }
+    private def replaceNestedColumnById[T](id: String,
+                                           rootField: String,
+                                           field: String,
+                                           v: T): DataFrame = {
       val structCols = df
-        .select("payload.*")
+        .select(s"$rootField.*")
         .columns
-        .filter(_ != "name")
-        .map(name => col("payload." + name))
+        .filter(_ != field)
+        .map(name => col(s"$rootField." + name))
 
       df.withColumn(
-        "payload",
+        rootField,
         struct(
-          (structCols :+ when(col("payload.id") === id, lit(name))
-            .otherwise(col("payload.name"))
-            .as("name")): _*)
+          (structCols :+ when(col("payload.id") === id, lit(v))
+            .otherwise(col(s"$rootField.$field"))
+            .as(field)): _*)
       )
     }
+
   }
 }

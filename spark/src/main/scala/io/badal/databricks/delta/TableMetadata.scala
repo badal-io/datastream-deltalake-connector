@@ -32,8 +32,6 @@ object TableMetadata {
       DatastreamMetadataColumn("source_metadata.log_position", LongType)
     )
 
-  private val METADATA_DELETED = "_metadata_deleted"
-
   /** Gets the TableMetadata by inspecting the first elements of a Dataframe */
   def fromDf(df: DataFrame): TableMetadata = {
     import org.apache.spark.sql.functions._

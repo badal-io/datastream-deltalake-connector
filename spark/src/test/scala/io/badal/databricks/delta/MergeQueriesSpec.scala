@@ -87,4 +87,30 @@ class MergeQueriesSpec
       }
     }
   }
+  test("delete records") {
+    withTable(testTable) {
+      withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
+
+        val source1Df = readJsonRecords("/events/records1.json")
+        val source2Df = source1Df
+          .markDeleted("993488433")
+
+        MergeQueries.upsertToDelta(source1Df, 1, Merge)
+
+        MergeQueries.upsertToDelta(source2Df, 1, Merge)
+
+        checkAnswer(
+          readDeltaTableByName(testTable).select("id", "name"),
+          Row("161401245", "Sabrina Ellis") ::
+            Row("290819604", "Christopher Bates") ::
+            Row("862224591", "Nathan Lowe") ::
+            // not changed since timestamp is the same as target
+            Row("915725144", "Brianna Tucker") ::
+            // Deleted
+            Row("993488433", "Allison Smith") ::
+            Nil
+        )
+      }
+    }
+  }
 }

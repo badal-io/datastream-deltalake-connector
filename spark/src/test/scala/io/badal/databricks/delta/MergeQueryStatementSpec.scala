@@ -30,11 +30,11 @@ class MergeQueryStatementSpec extends AnyFlatSpec with Matchers {
     res should equal(
       "t.datastream_metadata_source_timestamp <= s.source_timestamp")
   }
-  "join sql" should "ba" in {
+  "join sql" should "work" in {
     val res = MergeQueries.buildJoinConditions(tableMetadata, "t", "s.payload")
     res should equal("t.id = s.payload.id")
   }
-  "update statement" should "ba" in {
+  "update statement" should "work" in {
     val res = MergeQueries.buildUpdateExp(tableMetadata, "t")
     res should equal(
       Map(

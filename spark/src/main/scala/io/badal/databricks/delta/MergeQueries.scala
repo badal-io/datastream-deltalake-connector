@@ -1,7 +1,6 @@
 package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.delta.DeltaSchemaMigration.datastreamMetadataTargetFieldName
 import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
@@ -52,8 +51,11 @@ object MergeQueries {
     val timestampCompareExp =
       buildTimestampCompareSql(tableMetadata, TargetTableAlias, SrcTableAlias)
 
-    val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
-    val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
+//    val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
+//    val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
+
+    val isDeleteExp = "s.source_metadata.is_deleted = true"
+    val isNotDeleteExp = "s.source_metadata.is_deleted = false"
 
     log.info(
       s""" run MERGE with
@@ -88,7 +90,7 @@ object MergeQueries {
     val window =
       Window
         .partitionBy(pKeys.head, pKeys.drop(1): _*)
-        .orderBy(tableMetadata.orderByFields.map(f => desc(f._1)): _*)
+        .orderBy(tableMetadata.orderByFields.map(f => desc(f.fieldName)): _*)
 
     df.withColumn("row_num", row_number.over(window))
       .where("row_num == 1")
@@ -100,7 +102,7 @@ object MergeQueries {
                                               targetTable: String,
                                               sourceTable: String) = {
     val orderingColumn = tableMetadata.orderByFields.head
-    f"$targetTable.${datastreamMetadataTargetFieldName(orderingColumn._1)} <= $sourceTable.${orderingColumn._1}"
+    f"$targetTable.${orderingColumn.toTargetFieldName} <= $sourceTable.${orderingColumn.fieldName}"
   }
 
   private[delta] def buildJoinConditions(tableMetadata: TableMetadata,
@@ -116,10 +118,10 @@ object MergeQueries {
     val payloadFields: Map[String, String] = tableMetadata.payloadFields
       .map(field => field -> s"$sourceTableAlias.payload.$field")
       .toMap
-    val metadataFields: Map[String, String] = tableMetadata.orderByFields.map {
-      case (name, _) =>
-        datastreamMetadataTargetFieldName(name) -> s"$sourceTableAlias.$name"
-    }.toMap
+    val metadataFields: Map[String, String] = tableMetadata.orderByFields
+      .map(field =>
+        field.toTargetFieldName -> s"$sourceTableAlias.${field.fieldName}")
+      .toMap
 
     payloadFields ++ metadataFields
   }

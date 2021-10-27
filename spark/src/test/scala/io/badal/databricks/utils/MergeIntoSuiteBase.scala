@@ -6,6 +6,7 @@ import io.badal.databricks.utils.DirTestUtils.{createTempDir, deleteRecursively}
 import org.apache.spark.sql.{DataFrame, QueryTest, SparkSession}
 import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession}
 import org.scalatest.BeforeAndAfterEach
+import org.apache.spark.sql.functions._
 
 abstract class MergeIntoSuiteBase
     extends QueryTest
@@ -46,9 +47,13 @@ abstract class MergeIntoSuiteBase
   }
 
   protected def readJsonRecords(path: String)(
-      implicit spark: SparkSession): DataFrame =
+      implicit spark: SparkSession): DataFrame = {
+
     spark.read
       .option("multiline", "true")
+      .option("timestampFormat", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") // 2021-05-16T01:13:02.000Z
       .json(getClass.getResource(path).toString)
+      .withColumn("source_timestamp", to_timestamp(col("source_timestamp")))
+  }
 
 }

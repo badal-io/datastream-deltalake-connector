@@ -1,10 +1,11 @@
 package io.badal.databricks.delta
 
-import io.badal.databricks.config.DatastreamDeltaConf
+import io.badal.databricks.config.{DatastreamDeltaConf, SchemaEvolutionStrategy}
 import io.badal.databricks.datastream.DatastreamTable
+import io.badal.databricks.delta.DeltaSchemaMigration.buildTargetSchema
 import io.delta.tables.DeltaTable
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types.{StructField, StructType}
 
 object DeltaSchemaMigration {
@@ -27,16 +28,20 @@ object DeltaSchemaMigration {
         .load(datastreamTable.tablePath + "/*/*/*/*/*")
         .limit(1)
 
-      create(datastreamTable, df, jobConf)
+      create(datastreamTable,
+             df,
+             jobConf.deltalake.tablePath.value,
+             jobConf.generateLogTable)
     }
   }
 
   def create(datastreamTable: DatastreamTable,
              df: DataFrame,
-             jobConf: DatastreamDeltaConf): Unit = {
+             path: String,
+             generateLogTable: Boolean): Unit = {
     val mergeTableName =
       TableNameFormatter.targetTableName(datastreamTable.table)
-    val mergeTablePath = s"${jobConf.deltalake.tablePath}/$mergeTableName"
+    val mergeTablePath = s"$path/$mergeTableName"
 
     val mergeTableSchema = buildTargetSchema(TableMetadata.fromDf(df))
 
@@ -46,12 +51,39 @@ object DeltaSchemaMigration {
 
     createIfNotExists(mergeTableSchema, mergeTableName, mergeTablePath)
 
-    if (jobConf.generateLogTable) {
+    if (generateLogTable) {
       val logTableName =
         TableNameFormatter.logTableName(datastreamTable.table)
-      val logTablePath = s"${jobConf.deltalake.tablePath}/$logTableName"
+      val logTablePath = s"$path/$logTableName"
       createIfNotExists(df.schema, logTableName, logTablePath)
     }
+  }
+
+  /** Update Table schema.
+    * Simplest way to do this is to append and empty dataframe to the table with mergeSchema=true
+    * */
+  def updateSchema(path: String,
+                   tableMetadata: TableMetadata,
+                   schemaEvolutionStrategy: SchemaEvolutionStrategy)(
+      implicit spark: SparkSession): DeltaTable = {
+
+    // TODO: There may be a cleaner way to do this - instead of always appending an empty Dataframe,
+    // may want to first check if schema has changed. Though it is quite possible that DeltaLake
+    // takes care of these optimizations under the hood see the commented out migrateTableSchema
+    // function below for another way of doing this
+    val schema = buildTargetSchema(tableMetadata)
+    val emptyDF =
+      spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
+
+    log.info(s"Target schema for table at path $path is  $schema")
+
+    emptyDF.write
+      .option(schemaEvolutionStrategy)
+      .format("delta")
+      .mode(SaveMode.Append)
+      .save(path)
+
+    DeltaTable.forPath(path)
   }
 
   private def createIfNotExists(schema: StructType,

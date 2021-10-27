@@ -1,7 +1,6 @@
 package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
-import io.badal.databricks.datastream.DatastreamTable
 import io.badal.databricks.utils.MergeIntoSuiteBase
 import org.apache.spark.sql.delta.test.DeltaSQLCommandTest
 import org.apache.spark.sql.Row
@@ -18,14 +17,14 @@ class MergeQueriesSpec
     withTable(testTable) {
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
-//        DeltaSchemaMigration.create(DatastreamTable("", testTable))
-
         val sourceDf = readJsonRecords("/events/records1.json")
 
         MergeQueries.upsertToDelta(sourceDf, 1, Merge, tempPath)
 
+        spark.sql("show tables").show()
+
         checkAnswer(
-          readDeltaTableByName(testTable).select("id", "name"),
+          readDeltaTableByName(s"default.$testTable").select("id", "name"),
           Row("161401245", "Sabrina Ellis") ::
             Row("290819604", "Christopher Bates") ::
             Row("862224591", "Nathan Lowe") ::

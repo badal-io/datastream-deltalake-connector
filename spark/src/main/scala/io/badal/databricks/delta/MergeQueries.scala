@@ -48,7 +48,11 @@ object MergeQueries {
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
     /** First update the schema of the target table */
-    val targetTable = DeltaTable.forPath(path)
+    val targetTable = DeltaSchemaMigration.updateSchema(
+      path,
+      tableMetadata,
+      schemaEvolutionStrategy
+    )
 
     val updateExp = buildUpdateExp(tableMetadata, SrcTableAlias)
 

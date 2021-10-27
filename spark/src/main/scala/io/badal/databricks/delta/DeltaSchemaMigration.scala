@@ -1,98 +1,90 @@
 package io.badal.databricks.delta
 
-import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.config.SchemaEvolutionStrategy._
+import io.badal.databricks.config.DatastreamDeltaConf
+import io.badal.databricks.datastream.DatastreamTable
 import io.delta.tables.DeltaTable
 import org.apache.log4j.Logger
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
-
-import scala.util.Try
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types.{StructField, StructType}
 
 object DeltaSchemaMigration {
+
+  case class DeltaTarget(logTableOpt: Option[DeltaTable],
+                         mergeTable: DeltaTable)
 
   /** A struct field that is added to the target table to maintain important Datastream metadata */
   val DatastreamMetadataField = "datastream_metadata"
 
   private val log = Logger.getLogger(getClass.getName)
 
-//  def createTableIfDoesNotExist(tableName: String, schema: StructType)(
-//      implicit spark: SparkSession) = {
-//    val exists = doesTableExist(tableName)
-//    if (!exists) {
-//      val emptyDF =
-//        spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
-//
-//      log.info(s"Creating table $tableName")
-//
-//      emptyDF.write
-//        .format("delta")
-//        .mode(SaveMode.Overwrite)
-//        .saveAsTable(tableName)
-//    }
-//  }
+  def createAll(datastreamTables: Seq[DatastreamTable],
+                jobConf: DatastreamDeltaConf,
+                spark: SparkSession): Unit = {
 
-  /** Update Table schema.
-    * Simplest way to do this is to append and empty dataframe to the table with mergeSchema=true
-    * */
-  def updateSchemaByName(tableName: String,
-                         tableMetadata: TableMetadata,
-                         schemaEvolutionStrategy: SchemaEvolutionStrategy)(
-      implicit spark: SparkSession): DeltaTable = {
+    datastreamTables.foreach { datastreamTable =>
+      val df = spark.read
+        .format(jobConf.datastream.readFormat.value)
+        .option("ignoreExtension", true)
+        .option("maxFilesPerTrigger",
+                jobConf.datastream.fileReadConcurrency.value)
+        .load(datastreamTable.tablePath + "/*/*/*/*/*")
+        .limit(1)
 
-    // TODO: There may be a cleaner way to do this - instead of always appending an empty Dataframe,
-    // may want to first check if schema has changed. Though it is quite possible that DeltaLake
-    // takes care of these optimizations under the hood see the commented out migrateTableSchema
-    // function below for another way of doing this
-    val schema = buildTargetSchema(tableMetadata.payloadSchema,
-                                   tableMetadata.orderByFieldsSchema)
-
-    updateSchemaByName(tableName, schema, schemaEvolutionStrategy)
+      create(datastreamTable, df, jobConf)
+    }
   }
 
-  def updateSchemaByName(tableName: String,
-                         schema: StructType,
-                         schemaEvolutionStrategy: SchemaEvolutionStrategy)(
-      implicit spark: SparkSession): DeltaTable = {
-    val emptyDF =
-      spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
+  def create(datastreamTable: DatastreamTable,
+             df: DataFrame,
+             jobConf: DatastreamDeltaConf): Unit = {
+    val mergeTableName =
+      TableNameFormatter.targetTableName(datastreamTable.table)
+    val mergeTablePath = s"${jobConf.deltalake.tablePath}/$mergeTableName"
 
-    log.info(s"Target schema for table $tableName is  $schema")
+    val mergeTableSchema = buildTargetSchema(TableMetadata.fromDf(df))
 
-    emptyDF.write
-      .option(schemaEvolutionStrategy)
-      .format("delta")
-      .mode(SaveMode.Append)
-      .saveAsTable(tableName)
+    log.info(
+      s"Creating merge table $mergeTableName " +
+        s"with schema $mergeTableSchema if it is not present")
 
-    DeltaTable.forName(tableName)
+    createIfNotExists(mergeTableSchema, mergeTableName, mergeTablePath)
+
+    if (jobConf.generateLogTable) {
+      val logTableName =
+        TableNameFormatter.logTableName(datastreamTable.table)
+      val logTablePath = s"${jobConf.deltalake.tablePath}/$logTableName"
+      createIfNotExists(df.schema, logTableName, logTablePath)
+    }
   }
 
-  def updateSchemaByPath(path: String,
-                         schema: StructType,
-                         schemaEvolutionStrategy: SchemaEvolutionStrategy)(
-      implicit spark: SparkSession): DeltaTable = {
-    val emptyDF =
-      spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
+  private def createIfNotExists(schema: StructType,
+                                name: String,
+                                path: String) = {
+    log.info(s"Creating delta table $name at path $path if it is not present")
 
-    log.info(s"Target schema for path $path is  $schema")
+    val baseCmd = DeltaTable
+      .createIfNotExists()
+      .tableName(name)
+      .location(path)
 
-    emptyDF.write
-      .option(schemaEvolutionStrategy)
-      .format("delta")
-      .mode(SaveMode.Append)
-      .save(path)
-
-    DeltaTable.forPath(path)
+    schema.fields
+      .foldLeft(baseCmd) { (acc, field) =>
+        acc.addColumn(field)
+      }
+      .execute()
   }
 
-  def buildTargetSchema(payloadSchema: StructType,
-                        datastreamMetadataSchema: StructType): StructType =
-    payloadSchema.add(DatastreamMetadataField, datastreamMetadataSchema)
+  /** Append Metadata fields */
+  def buildTargetSchema(tableMetadata: TableMetadata): StructType =
+    tableMetadata.orderByFields.foldLeft(tableMetadata.payloadSchema) {
+      case (schema, (field, fieldType)) =>
+        schema.add(
+          StructField(datastreamMetadataTargetFieldName(field),
+                      fieldType,
+                      nullable = false))
+    }
 
-  private def doesTableExist(tableName: String): Boolean =
-    Try(DeltaTable.forName("target")).isSuccess
-
+  /** Flatten out and rename datastream metadata fields when writing to target */
+  def datastreamMetadataTargetFieldName(field: String): String =
+    s"${DatastreamMetadataField}_${field.replace(".", "_")}"
 }
-
-trait DeltaSchemaMigration {}

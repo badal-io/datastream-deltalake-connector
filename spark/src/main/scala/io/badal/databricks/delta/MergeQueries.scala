@@ -1,9 +1,9 @@
 package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.datastream.DataStreamSchema
-import io.badal.databricks.delta.DeltaSchemaMigration.DatastreamMetadataField
-import io.badal.databricks.utils.TableNameFormatter
+import io.badal.databricks.delta.DeltaSchemaMigration.datastreamMetadataTargetFieldName
+import io.delta.tables.DeltaTable
+import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
@@ -13,6 +13,8 @@ object MergeQueries {
   private val TargetTableAlias = "t"
   private val SrcTableAlias = "s"
   private val SrcPayloadTableAlias = "s.payload"
+
+  val log = Logger.getLogger(getClass.getName)
 
   /**
     * Upsert a batch of updates to a Delta Table
@@ -29,7 +31,8 @@ object MergeQueries {
     */
   def upsertToDelta(microBatchOutputDF: DataFrame,
                     batchId: Long,
-                    schemaEvolutionStrategy: SchemaEvolutionStrategy): Unit = {
+                    schemaEvolutionStrategy: SchemaEvolutionStrategy,
+                    path: String): Unit = {
 
     implicit val ss = microBatchOutputDF.sparkSession
     implicit val tableMetadata: TableMetadata =
@@ -38,34 +41,38 @@ object MergeQueries {
     val targetTableName =
       TableNameFormatter.targetTableName(tableMetadata.table)
 
-    val payloadFields: Array[String] =
-      DataStreamSchema.payloadFields(microBatchOutputDF)
+    val batchRecords = microBatchOutputDF.count()
+    log.trace(
+      s"processing batch of size $batchRecords for table $targetTableName")
 
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
     /** First update the schema of the target table */
-    val targetTable =
-      DeltaSchemaMigration.updateSchemaByName(targetTableName,
-        tableMetadata,
-        schemaEvolutionStrategy)
+    val targetTable = DeltaTable.forPath(path)
 
-    val updateExp = toFieldMap(payloadFields, SrcPayloadTableAlias)
+    val updateExp = buildUpdateExp(tableMetadata, SrcTableAlias)
 
-    val timestampCompareExp = buildTimestampCompareSql(
-      tableMetadata.orderByFields.head,
-      TargetTableAlias,
-      SrcTableAlias)
+    val timestampCompareExp =
+      buildTimestampCompareSql(tableMetadata, TargetTableAlias, SrcTableAlias)
 
     val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
     val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
+
+    log.info(
+      s""" run MERGE with
+         | timestampCompareExp: ${timestampCompareExp}
+         | updateExp: ${updateExp}
+         | isNotDeleteExp: ${isNotDeleteExp}
+         | """.stripMargin
+    )
 
     targetTable
       .as(TargetTableAlias)
       .merge(
         latestChangeForEachKey.as(SrcTableAlias),
-        buildJoinConditions(tableMetadata.payloadPrimaryKeyFields,
-          TargetTableAlias,
-          SrcPayloadTableAlias)
+        buildJoinConditions(tableMetadata,
+                            TargetTableAlias,
+                            SrcPayloadTableAlias)
       )
       .whenMatched(f"$timestampCompareExp AND $isDeleteExp")
       .delete()
@@ -77,14 +84,14 @@ object MergeQueries {
   }
 
   private def getLatestRow(df: DataFrame)(
-    implicit tableMetadata: TableMetadata): DataFrame = {
+      implicit tableMetadata: TableMetadata): DataFrame = {
     val pKeys = tableMetadata.payloadPrimaryKeyFields.map(payloadField)
 
     // TODO: handle deleted field
     val window =
       Window
         .partitionBy(pKeys.head, pKeys.drop(1): _*)
-        .orderBy(tableMetadata.orderByFields.map(desc): _*)
+        .orderBy(tableMetadata.orderByFields.map(f => desc(f._1)): _*)
 
     df.withColumn("row_num", row_number.over(window))
       .where("row_num == 1")
@@ -92,24 +99,36 @@ object MergeQueries {
   }
 
   /** Check if target is older than source using Datastream row metadata */
-  private def buildTimestampCompareSql(orderingColumn: String,
-                                       targetTable: String,
-                                       sourceTable: String) = {
-    f"$targetTable.$DatastreamMetadataField.$orderingColumn <= $sourceTable.$orderingColumn"
+  private[delta] def buildTimestampCompareSql(tableMetadata: TableMetadata,
+                                              targetTable: String,
+                                              sourceTable: String) = {
+    val (orderColName, _) = tableMetadata.orderByFields.head
+    f"$targetTable.${datastreamMetadataTargetFieldName(orderColName)} <= $sourceTable.$orderColName"
   }
 
-  private def buildJoinConditions(primaryKeyFields: Seq[String],
-                                  targetTable: String,
-                                  sourceTable: String) =
-    primaryKeyFields
-      .map(col => f"$targetTable.$col = $sourceTable.$col")
+  private[delta] def buildJoinConditions(tableMetadata: TableMetadata,
+                                         targetTableAlias: String,
+                                         sourceTableAlias: String) =
+    tableMetadata.payloadPrimaryKeyFields
+      .map(col => f"$targetTableAlias.$col = $sourceTableAlias.$col")
       .mkString(" AND ")
+
+  private[delta] def buildUpdateExp(
+      tableMetadata: TableMetadata,
+      sourceTableAlias: String): Map[String, String] = {
+    val payloadFields: Map[String, String] = tableMetadata.payloadFields
+      .map(field => field -> s"$sourceTableAlias.payload.$field")
+      .toMap
+    val metadataFields: Map[String, String] = tableMetadata.orderByFields.map {
+      case (name, _) =>
+        datastreamMetadataTargetFieldName(name) -> s"$sourceTableAlias.$name"
+    }.toMap
+
+    payloadFields ++ metadataFields
+  }
 
   // TODO: Move this logic elsewhere
   private def payloadField(field: String) =
-    s"payload.$field"
+    s"payload.${field}"
 
-  private def toFieldMap(fields: Seq[String],
-                         srcTable: String): Map[String, String] =
-    fields.map(field => (s"$field" -> s"$srcTable.$field")).toMap
 }

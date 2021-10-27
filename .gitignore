@@ -7,3 +7,5 @@
 */target/*
 target
 
+spark/spark-warehouse/*
+spark-warehouse/*

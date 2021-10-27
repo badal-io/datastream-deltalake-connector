@@ -6,7 +6,8 @@ object TestOps {
   def readDeltaTable(path: String)(implicit spark: SparkSession): DataFrame =
     spark.read.format("delta").load(path)
 
-  def readDeltaTableByName(table: String)(implicit spark: SparkSession): DataFrame =
+  def readDeltaTableByName(table: String)(
+      implicit spark: SparkSession): DataFrame =
     spark.table(table)
 
 }

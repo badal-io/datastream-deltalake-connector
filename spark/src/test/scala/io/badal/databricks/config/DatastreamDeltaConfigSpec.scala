@@ -1,4 +1,4 @@
-package io.badal.databricks.conf
+package io.badal.databricks.config
 
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
@@ -7,7 +7,6 @@ import io.badal.databricks.config.{
   DatastreamConf,
   DatastreamDeltaConf,
   DeltalakeConf,
-  SchemaEvolutionStrategy
 }
 import io.badal.databricks.datastream.DiscoveryBucket
 import org.scalatest.EitherValues._
@@ -37,7 +36,8 @@ class DatastreamDeltaConfigSpec extends AnyFlatSpec with Matchers {
   val deltalake = DeltalakeConf(
     tableNamePrefix = "test-prefix",
     mergeFrequencyMinutes = PosInt.unsafeFrom(1),
-    Merge
+    schemaEvolution = Merge,
+    tablePath = NonEmptyString.unsafeFrom("delta-table-path")
   )
 
   val validConf =

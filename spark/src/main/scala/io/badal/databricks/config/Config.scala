@@ -23,5 +23,6 @@ final case class DatastreamConf(
 final case class DeltalakeConf(
     tableNamePrefix: String,
     mergeFrequencyMinutes: PosInt,
-    schemaEvolution: SchemaEvolutionStrategy
+    schemaEvolution: SchemaEvolutionStrategy,
+    tablePath: NonEmptyString
 )

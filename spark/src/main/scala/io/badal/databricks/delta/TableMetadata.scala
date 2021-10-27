@@ -1,47 +1,42 @@
 package io.badal.databricks.delta
 
-import io.badal.databricks.datastream.{DataStreamSchema, DatastreamSource, MySQL, Oracle}
+import io.badal.databricks.datastream.{
+  DataStreamSchema,
+  DatastreamSource,
+  MySQL,
+  Oracle
+}
+import io.badal.databricks.delta
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types._
 
-/**
-  * Description of a Datastream tables including all context required to execute a Delta merge
-  */
+/** Describes everything we need to know about a Table to make a proper Merge Query */
 case class TableMetadata(sourceType: DatastreamSource,
                          table: String,
                          database: String,
                          payloadPrimaryKeyFields: Seq[String],
-                         orderByFieldsSchema: StructType,
-                         payloadSchema: StructType) {
-  lazy val orderByFields: Seq[String] = orderByFieldsSchema.fieldNames
-}
+                         /** primary keys - are part of the stream message 'payload' object */
+                         orderByFields: Seq[(String, DataType)],
+                         /** ordered fields that can be used to order messages */
+                         payloadSchema: StructType, /** Payload schema */
+                         payloadFields: Seq[String])
 
 object TableMetadata {
-  private val ORACLE_ORDER_BY_FIELDS =
-    Seq("source_timestamp", "source_metadata.scn")
-  private val MYSQL_ORDER_BY_FIELDS = Seq("source_timestamp",
-                                          "source_metadata.log_file",
-                                          "source_metadata.log_position")
-  private val ORACLE_ORDER_BY_FIELDS_SCHEMA = new StructType(
-    Array(
-      StructField("source_timestamp", TimestampType, true),
-      StructField("source_metadata.scn", LongType, true)
-    ))
-  private val MYSQL_ORDER_BY_FIELDS_SCHEMA = new StructType(
-    Array(
-      StructField("source_timestamp", TimestampType, true),
-      StructField("source_metadata.log_file", StringType, true),
-      StructField("source_metadata.log_position", LongType, true)
-    ))
+  private[delta] val ORACLE_ORDER_BY_FIELDS =
+    Seq("source_timestamp" -> TimestampType, "source_metadata.scn" -> LongType)
+  private[delta] val MYSQL_ORDER_BY_FIELDS =
+    Seq("source_timestamp" -> TimestampType,
+        "source_metadata.log_file" -> StringType,
+        "source_metadata.log_position" -> LongType)
+
   private val METADATA_DELETED = "_metadata_deleted"
 
-  /**
-    * Return a TableMetadata by inspecting the first elements of the given DataFrame
-    */
+  /** Gets the TableMetadata by inspecting the first elements of a Dataframe */
   def fromDf(df: DataFrame): TableMetadata = {
     import org.apache.spark.sql.functions._
 
-    val payloadSchema = DataStreamSchema.payloadSchema(df)
+    val payloadSchema: StructType = DataStreamSchema.payloadSchema(df)
+    val payloadFields: Array[String] = DataStreamSchema.payloadFields(df)
 
     val head = df
       .select(
@@ -54,13 +49,14 @@ object TableMetadata {
 
     val source = getSourceTypeFromReadMethod(head.getAs[String]("read_method"))
 
-    TableMetadata(
+    delta.TableMetadata(
       sourceType = source,
       table = head.getAs("table"),
       database = head.getAs("database"),
       payloadPrimaryKeyFields = head.getAs("primary_keys"),
-      orderByFieldsSchema = getOrderByFieldsSchema(source),
-      payloadSchema = payloadSchema
+      orderByFields = getOrderByFields(source),
+      payloadSchema = payloadSchema,
+      payloadFields = payloadFields
     )
   }
 
@@ -71,10 +67,11 @@ object TableMetadata {
       case "oracle" => Oracle
     }
 
-  private def getOrderByFieldsSchema(source: DatastreamSource): StructType =
+  private def getOrderByFields(
+      source: DatastreamSource): Seq[(String, DataType)] =
     source match {
-      case MySQL  => MYSQL_ORDER_BY_FIELDS_SCHEMA
-      case Oracle => ORACLE_ORDER_BY_FIELDS_SCHEMA
+      case MySQL  => MYSQL_ORDER_BY_FIELDS
+      case Oracle => ORACLE_ORDER_BY_FIELDS
     }
 
 }

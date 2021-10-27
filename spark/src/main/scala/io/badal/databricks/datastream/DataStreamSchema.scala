@@ -12,7 +12,7 @@ object DataStreamSchema {
   def payloadSchema(df: DataFrame): StructType =
     df.schema(PayloadField).dataType match {
       case s: StructType => s
-      case _ => throw new Exception("Invalid payload type")
+      case _             => throw new Exception("Invalid payload type")
     }
 
   def payloadFields(df: DataFrame): Array[String] = payloadSchema(df).fieldNames

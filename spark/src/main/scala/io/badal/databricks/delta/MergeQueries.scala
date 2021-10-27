@@ -36,13 +36,14 @@ object MergeQueries {
     implicit val tableMetadata: TableMetadata =
       TableMetadata.fromDf(microBatchOutputDF)
 
-//    val targetTableName =
-//      TableNameFormatter.targetTableName(tableMetadata.table)
+    val targetTableName =
+      TableNameFormatter.targetTableName(tableMetadata.table)
 
     val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
 
     /** First update the schema of the target table */
     val targetTable = DeltaSchemaMigration.updateSchema(
+      targetTableName,
       path,
       tableMetadata,
       schemaEvolutionStrategy
@@ -66,6 +67,14 @@ object MergeQueries {
          | isNotDeleteExp: ${isNotDeleteExp}
          | """.stripMargin
     )
+
+    log.info(s"$targetTableName update expr: " + updateExp)
+
+    log.info(s"$targetTableName payload schema")
+    tableMetadata.payloadSchema.printTreeString()
+
+    log.info(s"$targetTableName: target table schema")
+    targetTable.toDF.printSchema()
 
     targetTable
       .as(TargetTableAlias)

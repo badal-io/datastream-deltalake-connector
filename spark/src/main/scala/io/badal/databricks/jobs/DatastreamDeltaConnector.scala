@@ -37,12 +37,16 @@ object DatastreamDeltaConnector {
         .option(jobConf.deltalake.schemaEvolution)
         .option("checkpointLocation", s"${jobConf.checkpointDir}/$targetTable")
         .foreachBatch { (df: DataFrame, batchId: Long) =>
+          logger.info(s"processing batch: $batchId")
+          spark.sql("show tables").show()
           MergeQueries.upsertToDelta(
             df,
             batchId,
             jobConf.deltalake.schemaEvolution,
             jobConf.deltalake.tablePath.value
           )
+          spark.sql("show tables").show()
+          logger.info(s"finished batch: $batchId")
         }
         .outputMode("update")
         .start()

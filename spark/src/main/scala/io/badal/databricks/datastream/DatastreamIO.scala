@@ -1,46 +1,45 @@
 package io.badal.databricks.datastream
 
-import io.badal.databricks.config.SchemaEvolutionStrategy
-import io.badal.databricks.delta.{DeltaSchemaMigration, TableNameFormatter}
+import io.badal.databricks.config.DatastreamDeltaConf
+import io.badal.databricks.delta.DeltaSchemaMigration
+import io.badal.databricks.utils.TableNameFormatter
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
   * Helper class to read Datastream files and return them as a DataFrame
   * TODO:
-  * 1) Add support for JSON
-  * 2) Autodiscover tables
-  * 3) Turn it into a proper Receiver
-  * 4) Add support for maxFileAge
+  * 1) Turn it into a proper Receiver
+  * 2) Add support for maxFileAge
   */
 object DatastreamIO {
 
   val logger = Logger.getLogger(DatastreamIO.getClass)
 
-  def apply(spark: SparkSession,
-            datastreamTable: DatastreamTable,
-            fileReadConcurrency: Int,
-            writeRawCdcTable: Boolean,
-            checkpointDir: String,
-            schemaEvolutionStrategy: SchemaEvolutionStrategy,
-            readFormat: String): DataFrame = {
+  def readStreamFor(datastreamTable: DatastreamTable,
+                    jobConf: DatastreamDeltaConf,
+                    spark: SparkSession): DataFrame = {
 
     /**
       * Generates an intermediate delta table containing raw cdc events
       */
     def logTableStreamFrom(df: DataFrame): DataFrame = {
       val logTableName = TableNameFormatter.logTableName(datastreamTable.table)
-      val logTablePath = s"/delta/$logTableName"
+      val logTablePath = s"${jobConf.deltalake.tablePath}/$logTableName"
 
-      logger.info(s"will write raw cdc delta table $logTablePath")
+      logger.info(s"will write raw cdc delta table $logTableName")
 
-      DeltaSchemaMigration.updateSchemaByPath(logTablePath,
-                                              df.schema,
-                                              schemaEvolutionStrategy)(spark)
+      DeltaSchemaMigration.createOrUpdateSchema(
+        logTableName,
+        logTablePath,
+        df.schema,
+        jobConf.deltalake.schemaEvolution,
+        spark
+      )
 
       df.writeStream
-        .option(schemaEvolutionStrategy)
-        .option("checkpointLocation", s"$checkpointDir$logTablePath")
+        .option(jobConf.deltalake.schemaEvolution)
+        .option("checkpointLocation", s"${jobConf.checkpointDir}/$logTableName")
         .format("delta")
         .outputMode("append")
         .start(logTablePath)
@@ -50,13 +49,19 @@ object DatastreamIO {
         .load(logTablePath)
     }
 
+    val paths = filePaths(datastreamTable.tablePath)
+
+    logger.info(
+      s"defining stream for Datastream table source located at $paths")
+
     val inputDf = spark.readStream
-      .format(readFormat)
+      .format(jobConf.datastream.readFormat.value)
       .option("ignoreExtension", true)
-      .option("maxFilesPerTrigger", fileReadConcurrency)
+      .option("maxFilesPerTrigger",
+              jobConf.datastream.fileReadConcurrency.value)
       .load(filePaths(datastreamTable.tablePath))
 
-    if (writeRawCdcTable) logTableStreamFrom(inputDf)
+    if (jobConf.generateLogTable) logTableStreamFrom(inputDf)
     else inputDf
   }
 

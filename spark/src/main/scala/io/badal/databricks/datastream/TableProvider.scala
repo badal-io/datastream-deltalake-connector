@@ -12,11 +12,14 @@ final case class DiscoveryBucket(bucket: NonEmptyString,
                                  path: Option[NonEmptyString])
     extends TableProvider {
   override def list(): Seq[DatastreamTable] = {
-    val pathOrEmpty = path.map("/" + _.value).getOrElse("")
     GCSOps
-      .list(bucket.value, pathOrEmpty)
+      .list(bucket.value, path.map(_.value).getOrElse(""))
       .toSeq
-      .map(table => DatastreamTable(s"gs://${bucket.value}$pathOrEmpty", table))
+      .map { table =>
+        DatastreamTable(
+          s"gs://${bucket.value}${path.map("/" + _.value).getOrElse("")}",
+          table)
+      }
   }
 }
 

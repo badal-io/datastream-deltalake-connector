@@ -63,3 +63,4 @@ May need to set your project configuration to the relevant one also,
 ## Limitations
 1) Updating primary key columns has not been tested
 2) source_metadata.is_deleted column is used to detect deletes, while the change_type column is ignored (similar to the Dataflow implimentation)
+3) New Datastream tables are not auto-discovered. Ingesting newly added tables requires restating the connector

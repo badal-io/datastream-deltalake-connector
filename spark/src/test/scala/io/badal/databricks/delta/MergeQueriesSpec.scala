@@ -13,10 +13,11 @@ class MergeQueriesSpec
   import testImplicits._
   import io.badal.databricks.utils.DataFrameOps._
 
-  private val testTable: String = "inventory_voters"
+  private val testTable = DatastreamDeltaTable("demo", "inventory.voters")
 
   test("insert to an empty table") {
-    withTable(testTable) {
+    withTable(testTable.fullTargetTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
         val sourceDf = readJsonRecords("/events/records1.json")
@@ -26,7 +27,8 @@ class MergeQueriesSpec
         spark.sql("show tables").show()
 
         checkAnswer(
-          readDeltaTableByName(s"default.$testTable").select("id", "name"),
+          readDeltaTableByName(testTable.fullTargetTableName).select("id",
+                                                                     "name"),
           Row("161401245", "Sabrina Ellis") ::
             Row("290819604", "Christopher Bates") ::
             Row("862224591", "Nathan Lowe") ::
@@ -39,7 +41,8 @@ class MergeQueriesSpec
   }
 
   test("insert records to an existing table") {
-    withTable(testTable) {
+    withTable(testTable.fullTargetTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
         val sourceDf1 = readJsonRecords("/events/records1.json")
@@ -48,7 +51,7 @@ class MergeQueriesSpec
         MergeQueries.upsertToDelta(sourceDf1, Merge, tempPath)
 
         checkAnswer(
-          readDeltaTableByName(testTable)
+          readDeltaTableByName(testTable.fullTargetTableName)
             .select("id", "name"),
           Row("161401245", "Sabrina Ellis") ::
             Row("290819604", "Christopher Bates") ::
@@ -61,7 +64,9 @@ class MergeQueriesSpec
     }
   }
   test("update records") {
-    withTable(testTable) {
+    withTable(testTable.fullTargetTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
+
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
         val source1Df = readJsonRecords("/events/records1.json")
@@ -76,7 +81,8 @@ class MergeQueriesSpec
         MergeQueries.upsertToDelta(source2Df, Merge, tempPath)
 
         checkAnswer(
-          readDeltaTableByName(testTable).select("id", "name"),
+          readDeltaTableByName(testTable.fullTargetTableName).select("id",
+                                                                     "name"),
           Row("161401245", "Sabrina Ellis") ::
             Row("290819604", "Christopher Bates") ::
             Row("862224591", "Nathan Lowe") ::
@@ -90,7 +96,9 @@ class MergeQueriesSpec
     }
   }
   test("delete records") {
-    withTable(testTable) {
+    withTable(testTable.fullTargetTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
+
       withSQLConf(("spark.databricks.delta.schema.autoMerge.enabled", "true")) {
 
         val source1Df = readJsonRecords("/events/records1.json")
@@ -102,7 +110,8 @@ class MergeQueriesSpec
         MergeQueries.upsertToDelta(source2Df, Merge, tempPath)
 
         checkAnswer(
-          readDeltaTableByName(testTable).select("id", "name"),
+          readDeltaTableByName(testTable.fullTargetTableName).select("id",
+                                                                     "name"),
           Row("161401245", "Sabrina Ellis") ::
             Row("290819604", "Christopher Bates") ::
             Row("862224591", "Nathan Lowe") ::

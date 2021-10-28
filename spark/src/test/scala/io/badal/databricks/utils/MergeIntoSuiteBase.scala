@@ -2,6 +2,7 @@ package io.badal.databricks.utils
 
 import java.io.File
 
+import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.utils.DirTestUtils.{createTempDir, deleteRecursively}
 import org.apache.spark.sql.{DataFrame, QueryTest, SparkSession}
 import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession}
@@ -29,7 +30,8 @@ abstract class MergeIntoSuiteBase
     }
   }
 
-  protected def tempPath: String = tempDir.getCanonicalPath
+  protected def tempPath: NonEmptyString =
+    NonEmptyString.unsafeFrom(tempDir.getCanonicalPath)
 
   protected def readDeltaTable(path: String): DataFrame = {
     spark.read.format("delta").load(path)
@@ -43,7 +45,7 @@ abstract class MergeIntoSuiteBase
     if (partitions.nonEmpty) {
       dfw.partitionBy(partitions: _*)
     }
-    dfw.save(tempPath)
+    dfw.save(tempPath.value)
   }
 
   protected def readJsonRecords(path: String)(

@@ -12,8 +12,7 @@ import org.apache.spark.sql.types._
 
 /** Describes everything we need to know about a Table to make a proper Merge Query */
 case class TableMetadata(sourceType: DatastreamSource,
-                         table: String,
-                         database: String,
+                         table: DatastreamDeltaTable,
                          payloadPrimaryKeyFields: Seq[String],
                          /** primary keys - are part of the stream message 'payload' object */
                          orderByFields: Seq[DatastreamMetadataColumn],
@@ -38,6 +37,7 @@ object TableMetadata {
   def fromDf(df: DataFrame): Option[TableMetadata] = {
     import org.apache.spark.sql.functions._
 
+    df.show(100)
     df.select(
         col("read_method").as("read_method"),
         col("source_metadata.table").as("table"),
@@ -52,10 +52,13 @@ object TableMetadata {
         val source =
           getSourceTypeFromReadMethod(head.getAs[String]("read_method"))
 
+        val table = head.getAs[String]("table")
+        val database = head.getAs[String]("database")
+
         delta.TableMetadata(
           sourceType = source,
-          table = head.getAs("table"),
-          database = head.getAs("database"),
+          table =
+            DatastreamDeltaTable(databaseName = database, tableName = table),
           payloadPrimaryKeyFields = head.getAs("primary_keys"),
           orderByFields = getOrderByFields(source),
           payloadSchema = payloadSchema,

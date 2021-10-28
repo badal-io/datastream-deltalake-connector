@@ -33,6 +33,9 @@ object DatastreamDeltaConnector {
       /** Get a streaming Dataframe of Datastream records */
       DatastreamIO.readStreamFor(datastreamTable, jobConf, spark) match {
         case Some((inputDf, tableMetadata)) =>
+          /** Make sure Database existis */
+          DeltaSchemaMigration.createDBIfNotExist(tableMetadata.table,
+            jobConf.deltalake.tablePath.value)(spark)
           /** Merge into target table */
           inputDf.writeStream
             .format("delta")

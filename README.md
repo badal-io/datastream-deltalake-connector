@@ -31,7 +31,18 @@ In this guide we will be using Databricks.
 
 ### Setup Test Environment on GCP 
 
-### Start Moc Data Generator
+- Create a CloudSQL instance: https://cloud.google.com/sql/docs/mysql/create-instance
+- Configure the CloudSQL instance to for Datastream: https://cloud.google.com/datastream/docs/configure-your-source-mysql-database
+- Create a Datastream connection profile: https://cloud.google.com/datastream/docs/create-connection-profiles
+- Create a Datastream stream: https://cloud.google.com/datastream/docs/create-a-stream
+
+### Start Mock Data Generator
+
+Follow instructions in  app-engine-mock-data-producer/ 
+
+After a couple of minutes you should see files being writen ![alt text]( docs/images/datastream_gcs_data.png)
+
+### Setup Databricks on GCP
 
 ### Deploy Connector on Databricks 
 

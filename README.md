@@ -17,7 +17,7 @@ Currently Datastream streams changes to files in Google Cloud Storage (GCS). The
 ## More About Datastream
 
 - Supported Source Databases: Currently only MySQL and Oracle as supported. However other sources are on the roadmap. Ones avaiable, the can be integrated into this connector with a few lines of code
-- Suppurted Sinks: Currently Datastream supports streaming data only to GCS. However, support for publishing messages directly to Pub/Sub in under development
+- Supported Sinks: Currently Datastream supports streaming data only to GCS. However, support for publishing messages directly to Pub/Sub in under development
 
 ## Running Delta Lake on GCP
 GCP provides two ways to run spark: [DataProc](https://cloud.google.com/dataproc?utm_source=google&utm_medium=cpc&utm_campaign=na-CA-all-en-dr-skws-all-all-trial-e-dr-1009892&utm_content=text-ad-none-any-DEV_c-CRE_526598862388-ADGP_Desk%20%7C%20SKWS%20-%20EXA%20%7C%20Txt%20~%20Data%20Analytics%20~%20Dataproc_Data-KWID_43700061549686780-kwd-145280350857&utm_term=KW_dataproc-ST_dataproc&gclid=CjwKCAjwzt6LBhBeEiwAbPGOgRf2M925dmlFf3gRHA046NIAj9jnsVwIFH2xzF1W_VwG_cOE431AWRoCx6wQAvD_BwE&gclsrc=aw.ds) and [Databricks running on GCP](https://docs.gcp.databricks.com/)

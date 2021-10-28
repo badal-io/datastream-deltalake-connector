@@ -2,10 +2,11 @@ package io.badal.databricks.jobs
 
 import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.datastream.DatastreamIO
+import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{
+  DatastreamDeltaTable,
   DeltaSchemaMigration,
-  MergeQueries,
-  TableNameFormatter
+  MergeQueries
 }
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -30,28 +31,35 @@ object DatastreamDeltaConnector {
         s"defining stream for datastream table defined at ${datastreamTable.tablePath}")
 
       /** Get a streaming Dataframe of Datastream records */
-      val inputDf = DatastreamIO.readStreamFor(datastreamTable, jobConf, spark)
+      DatastreamIO.readStreamFor(datastreamTable, jobConf, spark) match {
+        case Some((inputDf, tableMetadata)) =>
+          /** Make sure Database exists */
+          DeltaSchemaMigration.createDBIfNotExist(tableMetadata.table,
+            jobConf.deltalake.tablePath.value)(spark)
+          /** Merge into target table */
+          inputDf.writeStream
+            .format("delta")
+            .option(jobConf.deltalake.schemaEvolution)
+            .option(
+              "checkpointLocation",
+              s"${jobConf.checkpointDir}/${tableMetadata.table.fullTargetTableName}")
+            .foreachBatch { (df: DataFrame, _: Long) =>
+              MergeQueries.upsertToDelta(
+                df,
+                jobConf.deltalake.schemaEvolution,
+                jobConf.deltalake.tablePath
+              )
+            }
+            .outputMode("update")
+            .start()
+        case None =>
+          log.error(
+            s"empty folder ${datastreamTable.tablePath} " +
+              s" for table ${datastreamTable} - could not start")
+      }
 
-      val targetTable =
-        TableNameFormatter.targetTableName(datastreamTable.table)
-
-      /** Merge into target table */
-      inputDf.writeStream
-        .format("delta")
-        .option(jobConf.deltalake.schemaEvolution)
-        .option("checkpointLocation", s"${jobConf.checkpointDir}/$targetTable")
-        .foreachBatch { (df: DataFrame, _: Long) =>
-          MergeQueries.upsertToDelta(
-            df,
-            jobConf.deltalake.schemaEvolution,
-            jobConf.deltalake.tablePath.value
-          )
-        }
-        .outputMode("update")
-        .start()
+      spark.streams.awaitAnyTermination()
     }
-
-    spark.streams.awaitAnyTermination()
   }
 
 }

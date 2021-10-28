@@ -1,5 +1,6 @@
 package io.badal.databricks.delta
 
+import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.SchemaEvolutionStrategy
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -29,7 +30,7 @@ object MergeQueries {
     */
   def upsertToDelta(microBatchOutputDF: DataFrame,
                     schemaEvolutionStrategy: SchemaEvolutionStrategy,
-                    path: String): Unit = {
+                    path: NonEmptyString): Unit = {
     implicit val ss = microBatchOutputDF.sparkSession
 
     TableMetadata.fromDf(microBatchOutputDF) match {
@@ -46,20 +47,15 @@ object MergeQueries {
   def upsertToDelta(
       microBatchOutputDF: DataFrame,
       schemaEvolutionStrategy: SchemaEvolutionStrategy,
-      path: String,
+      path: NonEmptyString,
       tableMetadata: TableMetadata)(implicit ss: SparkSession): Unit = {
-    val targetTableName =
-      TableNameFormatter.targetTableName(tableMetadata.table)
-
-    val targetTablePath = s"$path/$targetTableName"
 
     val latestChangeForEachKey: DataFrame =
       getLatestRow(microBatchOutputDF, tableMetadata)
 
     /** First update the schema of the target table */
     val targetTable = DeltaSchemaMigration.createOrUpdateSchema(
-      targetTableName,
-      targetTablePath,
+      path,
       tableMetadata,
       schemaEvolutionStrategy,
       ss

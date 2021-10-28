@@ -11,10 +11,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class MergeQueryStatementSpec extends AnyFlatSpec with Matchers {
+  val table = "testT"
+  val database = "testD"
+
   private val tableMetadata = TableMetadata(
     sourceType = MySQL,
-    table = "testT",
-    database = "testD",
+    table = DatastreamDeltaTable(database, table),
     payloadPrimaryKeyFields = Seq("id"),
     orderByFields = TableMetadata.MYSQL_ORDER_BY_FIELDS,
     payloadSchema = new StructType(

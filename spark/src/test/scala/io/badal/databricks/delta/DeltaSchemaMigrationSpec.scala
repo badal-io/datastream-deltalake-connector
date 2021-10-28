@@ -11,20 +11,21 @@ class DeltaSchemaMigrationSpec
     with BeforeAndAfterEach
     with DeltaSQLCommandTest {
 
-  private val testTable: String = "inventory_voters"
+  private val testTable = DatastreamDeltaTable("demo", "inventory.voters")
+  private val testTableName = testTable.fullTargetTableName
 
   test("create initial target schema") {
-    withTable(testTable) {
+    withTable(testTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
+
       val sourceDf = readJsonRecords("/events/records1.json")
 
       val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
-      DeltaSchemaMigration.createOrUpdateSchema(testTable,
-                                                tempPath,
+      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
                                                 tableMetadata,
                                                 Merge,
                                                 spark)
-
       MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
       val targetSchema = new StructType(
@@ -45,17 +46,18 @@ class DeltaSchemaMigrationSpec
                       true)
         ))
 
-      assert(readDeltaTableByName(testTable).schema == targetSchema)
+      assert(readDeltaTableByName(testTableName).schema == targetSchema)
     }
   }
   test("add a field") {
-    withTable(testTable) {
+    withTable(testTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
+
       val sourceDf = readJsonRecords("/events/records1.json")
 
       val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
-      DeltaSchemaMigration.createOrUpdateSchema(testTable,
-                                                tempPath,
+      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
                                                 tableMetadata,
                                                 Merge,
                                                 spark)
@@ -67,8 +69,7 @@ class DeltaSchemaMigrationSpec
           tableMetadata.payloadSchema.add("newField1", LongType, false)
       )
 
-      DeltaSchemaMigration.createOrUpdateSchema(testTable,
-                                                tempPath,
+      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
                                                 tableMetadataNew,
                                                 Merge,
                                                 spark)
@@ -94,11 +95,13 @@ class DeltaSchemaMigrationSpec
           /** new fields are added as nullable */
         ))
 
-      assert(readDeltaTableByName(testTable).schema == targetSchema)
+      assert(readDeltaTableByName(testTableName).schema == targetSchema)
     }
   }
   test("remove a column") {
-    withTable(testTable) {
+    withTable(testTableName) {
+      DeltaSchemaMigration.createDBIfNotExist(testTable, tempDir.getPath)
+
       val sourceDf = readJsonRecords("/events/records1.json")
 
       val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
@@ -108,8 +111,7 @@ class DeltaSchemaMigrationSpec
           tableMetadata.payloadSchema.add("testColumn", LongType, false)
       )
 
-      DeltaSchemaMigration.createOrUpdateSchema(testTable,
-                                                tempPath,
+      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
                                                 tableMetadataWithExtraColumn,
                                                 Merge,
                                                 spark)
@@ -135,7 +137,7 @@ class DeltaSchemaMigrationSpec
                       true)
         ))
 
-      assert(readDeltaTableByName(testTable).schema == targetSchema)
+      assert(readDeltaTableByName(testTableName).schema == targetSchema)
     }
   }
 

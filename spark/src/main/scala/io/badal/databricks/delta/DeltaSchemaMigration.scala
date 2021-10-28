@@ -1,10 +1,11 @@
 package io.badal.databricks.delta
 
+import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.SchemaEvolutionStrategy
 import io.delta.tables.DeltaTable
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 object DeltaSchemaMigration {
 
@@ -13,11 +14,17 @@ object DeltaSchemaMigration {
 
   private val log = Logger.getLogger(getClass.getName)
 
+  def createDBIfNotExist(table: DatastreamDeltaTable,
+                         path: String,
+                         comment: String = "Replicated from Datastream")(
+      implicit spark: SparkSession): DataFrame =
+    spark.sql(s"""CREATE DATABASE IF NOT EXISTS ${table.databaseName}
+         | COMMENT '$comment' LOCATION '${path}'""".stripMargin)
+
   /** Update Table schema.
     * Simplest way to do this is to append and empty dataframe to the table with mergeSchema=true
     * */
-  def createOrUpdateSchema(name: String,
-                           path: String,
+  def createOrUpdateSchema(basePath: NonEmptyString,
                            tableMetadata: TableMetadata,
                            schemaEvolutionStrategy: SchemaEvolutionStrategy,
                            spark: SparkSession): DeltaTable = {
@@ -28,14 +35,19 @@ object DeltaSchemaMigration {
     // function below for another way of doing this
     val schema = buildTargetSchema(tableMetadata)
 
-    createOrUpdateSchema(name, path, schema, schemaEvolutionStrategy, spark)
+    createOrUpdateSchema(tableMetadata.table,
+                         basePath,
+                         schema,
+                         schemaEvolutionStrategy,
+                         spark)
   }
 
-  def createOrUpdateSchema(name: String,
-                           path: String,
-                           schema: StructType,
-                           schemaEvolutionStrategy: SchemaEvolutionStrategy,
-                           spark: SparkSession): DeltaTable = {
+  private def createOrUpdateSchema(
+      table: DatastreamDeltaTable,
+      path: NonEmptyString,
+      schema: StructType,
+      schemaEvolutionStrategy: SchemaEvolutionStrategy,
+      spark: SparkSession): DeltaTable = {
     val emptyDF =
       spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
 
@@ -43,12 +55,12 @@ object DeltaSchemaMigration {
 
     emptyDF.write
       .option(schemaEvolutionStrategy)
-      .option("path", path)
+      .option("path", path.value)
       .format("delta")
       .mode(SaveMode.Append)
-      .saveAsTable(name)
+      .saveAsTable(table.fullTargetTableName)
 
-    DeltaTable.forName(name)
+    DeltaTable.forName(table.fullTargetTableName)
   }
 
   /** Append Metadata fields */

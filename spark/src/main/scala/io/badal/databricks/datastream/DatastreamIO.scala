@@ -1,6 +1,7 @@
 package io.badal.databricks.datastream
 
 import io.badal.databricks.config.DatastreamDeltaConf
+import io.badal.databricks.delta.DeltaSchemaMigration
 import io.badal.databricks.utils.TableNameFormatter
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -28,6 +29,14 @@ object DatastreamIO {
 
       logger.info(s"will write raw cdc delta table $logTableName")
 
+      DeltaSchemaMigration.createOrUpdateSchema(
+        logTableName,
+        logTablePath,
+        df.schema,
+        jobConf.deltalake.schemaEvolution,
+        spark
+      )
+
       df.writeStream
         .option(jobConf.deltalake.schemaEvolution)
         .option("checkpointLocation", s"${jobConf.checkpointDir}/$logTableName")
@@ -39,6 +48,11 @@ object DatastreamIO {
         .format("delta")
         .load(logTablePath)
     }
+
+    val paths = filePaths(datastreamTable.tablePath)
+
+    logger.info(
+      s"defining stream for Datastream table source located at $paths")
 
     val inputDf = spark.readStream
       .format(jobConf.datastream.readFormat.value)

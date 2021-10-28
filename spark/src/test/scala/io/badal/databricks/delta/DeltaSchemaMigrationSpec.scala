@@ -17,11 +17,15 @@ class DeltaSchemaMigrationSpec
     withTable(testTable) {
       val sourceDf = readJsonRecords("/events/records1.json")
 
-      val tableMetadata = TableMetadata.fromDf(sourceDf)
+      val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
-//      DeltaSchemaMigration.updateSchemaByName(testTable, tableMetadata, Merge)
-//
-      MergeQueries.upsertToDelta(sourceDf, 1, Merge, tempPath)
+      DeltaSchemaMigration.createOrUpdateSchema(testTable,
+                                                tempPath,
+                                                tableMetadata,
+                                                Merge,
+                                                spark)
+
+      MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
       val targetSchema = new StructType(
         Array(
@@ -48,20 +52,26 @@ class DeltaSchemaMigrationSpec
     withTable(testTable) {
       val sourceDf = readJsonRecords("/events/records1.json")
 
-      val tableMetadata = TableMetadata.fromDf(sourceDf)
+      val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
-//      DeltaSchemaMigration.updateSchemaByName(testTable, tableMetadata, Merge)
+      DeltaSchemaMigration.createOrUpdateSchema(testTable,
+                                                tempPath,
+                                                tableMetadata,
+                                                Merge,
+                                                spark)
 
-      MergeQueries.upsertToDelta(sourceDf, 1, Merge, tempPath)
+      MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
       val tableMetadataNew = tableMetadata.copy(
         payloadSchema =
           tableMetadata.payloadSchema.add("newField1", LongType, false)
       )
 
-//      DeltaSchemaMigration.updateSchemaByName(testTable,
-//                                              tableMetadataNew,
-//                                              Merge)
+      DeltaSchemaMigration.createOrUpdateSchema(testTable,
+                                                tempPath,
+                                                tableMetadataNew,
+                                                Merge,
+                                                spark)
 
       val targetSchema = new StructType(
         Array(
@@ -91,18 +101,20 @@ class DeltaSchemaMigrationSpec
     withTable(testTable) {
       val sourceDf = readJsonRecords("/events/records1.json")
 
-      val tableMetadata = TableMetadata.fromDf(sourceDf)
+      val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
       val tableMetadataWithExtraColumn = tableMetadata.copy(
         payloadSchema =
           tableMetadata.payloadSchema.add("testColumn", LongType, false)
       )
 
-//      DeltaSchemaMigration.updateSchemaByName(testTable,
-//                                              tableMetadataWithExtraColumn,
-//                                              Merge)
-//
-      MergeQueries.upsertToDelta(sourceDf, 1, Merge, tempPath)
+      DeltaSchemaMigration.createOrUpdateSchema(testTable,
+                                                tempPath,
+                                                tableMetadataWithExtraColumn,
+                                                Merge,
+                                                spark)
+
+      MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
       val targetSchema = new StructType(
         Array(

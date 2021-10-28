@@ -32,33 +32,36 @@ object TableMetadata {
       DatastreamMetadataColumn("source_metadata.log_position", LongType)
     )
 
+  def fromDfUnsafe(df: DataFrame): TableMetadata = fromDf(df).get
+
   /** Gets the TableMetadata by inspecting the first elements of a Dataframe */
-  def fromDf(df: DataFrame): TableMetadata = {
+  def fromDf(df: DataFrame): Option[TableMetadata] = {
     import org.apache.spark.sql.functions._
 
-    val payloadSchema: StructType = DataStreamSchema.payloadSchema(df)
-    val payloadFields: Array[String] = DataStreamSchema.payloadFields(df)
-
-    val head = df
-      .select(
+    df.select(
         col("read_method").as("read_method"),
         col("source_metadata.table").as("table"),
         col("source_metadata.database").as("database"),
         col("source_metadata.primary_keys").as("primary_keys")
       )
-      .head
+      .head(1)
+      .headOption
+      .map { head =>
+        val payloadSchema: StructType = DataStreamSchema.payloadSchema(df)
+        val payloadFields: Array[String] = DataStreamSchema.payloadFields(df)
+        val source =
+          getSourceTypeFromReadMethod(head.getAs[String]("read_method"))
 
-    val source = getSourceTypeFromReadMethod(head.getAs[String]("read_method"))
-
-    delta.TableMetadata(
-      sourceType = source,
-      table = head.getAs("table"),
-      database = head.getAs("database"),
-      payloadPrimaryKeyFields = head.getAs("primary_keys"),
-      orderByFields = getOrderByFields(source),
-      payloadSchema = payloadSchema,
-      payloadFields = payloadFields
-    )
+        delta.TableMetadata(
+          sourceType = source,
+          table = head.getAs("table"),
+          database = head.getAs("database"),
+          payloadPrimaryKeyFields = head.getAs("primary_keys"),
+          orderByFields = getOrderByFields(source),
+          payloadSchema = payloadSchema,
+          payloadFields = payloadFields
+        )
+      }
   }
 
   private def getSourceTypeFromReadMethod(

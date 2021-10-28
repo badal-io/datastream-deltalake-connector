@@ -21,7 +21,7 @@ class MergeQueriesSpec
 
         val sourceDf = readJsonRecords("/events/records1.json")
 
-        MergeQueries.upsertToDelta(sourceDf, 1, Merge, tempPath)
+        MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
         spark.sql("show tables").show()
 
@@ -45,7 +45,7 @@ class MergeQueriesSpec
         val sourceDf1 = readJsonRecords("/events/records1.json")
 
         // Populate table
-        MergeQueries.upsertToDelta(sourceDf1, 1, Merge, tempPath)
+        MergeQueries.upsertToDelta(sourceDf1, Merge, tempPath)
 
         checkAnswer(
           readDeltaTableByName(testTable)
@@ -71,9 +71,9 @@ class MergeQueriesSpec
           .incrementTs("915725144", -2)
           .changeNameTo("915725144", "Brianna Smith")
 
-        MergeQueries.upsertToDelta(source1Df, 1, Merge, tempPath)
+        MergeQueries.upsertToDelta(source1Df, Merge, tempPath)
 
-        MergeQueries.upsertToDelta(source2Df, 1, Merge, tempPath)
+        MergeQueries.upsertToDelta(source2Df, Merge, tempPath)
 
         checkAnswer(
           readDeltaTableByName(testTable).select("id", "name"),
@@ -97,9 +97,9 @@ class MergeQueriesSpec
         val source2Df = source1Df
           .markDeleted("993488433")
 
-        MergeQueries.upsertToDelta(source1Df, 1, Merge, tempPath)
+        MergeQueries.upsertToDelta(source1Df, Merge, tempPath)
 
-        MergeQueries.upsertToDelta(source2Df, 1, Merge, tempPath)
+        MergeQueries.upsertToDelta(source2Df, Merge, tempPath)
 
         checkAnswer(
           readDeltaTableByName(testTable).select("id", "name"),
@@ -109,7 +109,7 @@ class MergeQueriesSpec
             // not changed since timestamp is the same as target
             Row("915725144", "Brianna Tucker") ::
             // Deleted
-          //  Row("993488433", "Allison Smith") ::
+            //  Row("993488433", "Allison Smith") ::
             Nil
         )
       }

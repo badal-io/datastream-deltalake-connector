@@ -17,9 +17,13 @@ object DatastreamDeltaConnector {
   def run(spark: SparkSession, jobConf: DatastreamDeltaConf): Unit = {
     logger.info("starting...")
 
+    logger.info(
+      s"loading table targets using: ${jobConf.datastream.tableSource}")
+
     val tables = jobConf.datastream.tableSource.list()
 
-//    DeltaSchemaMigration.createAll(tables, jobConf, spark)
+    logger.info("table targets to be loaded into delta...")
+    tables.foreach(table => logger.info(s"table: ${table.table}"))
 
     tables.foreach { datastreamTable =>
       logger.info(
@@ -36,17 +40,12 @@ object DatastreamDeltaConnector {
         .format("delta")
         .option(jobConf.deltalake.schemaEvolution)
         .option("checkpointLocation", s"${jobConf.checkpointDir}/$targetTable")
-        .foreachBatch { (df: DataFrame, batchId: Long) =>
-          logger.info(s"processing batch: $batchId")
-          spark.sql("show tables").show()
+        .foreachBatch { (df: DataFrame, _: Long) =>
           MergeQueries.upsertToDelta(
             df,
-            batchId,
             jobConf.deltalake.schemaEvolution,
             jobConf.deltalake.tablePath.value
           )
-          spark.sql("show tables").show()
-          logger.info(s"finished batch: $batchId")
         }
         .outputMode("update")
         .start()

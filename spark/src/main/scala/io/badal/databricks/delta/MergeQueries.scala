@@ -2,7 +2,7 @@ package io.badal.databricks.delta
 
 import io.badal.databricks.config.SchemaEvolutionStrategy
 import org.apache.log4j.Logger
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{desc, row_number}
 
@@ -28,25 +28,41 @@ object MergeQueries {
     * @param batchId
     */
   def upsertToDelta(microBatchOutputDF: DataFrame,
-                    batchId: Long,
                     schemaEvolutionStrategy: SchemaEvolutionStrategy,
                     path: String): Unit = {
-
     implicit val ss = microBatchOutputDF.sparkSession
-    implicit val tableMetadata: TableMetadata =
-      TableMetadata.fromDf(microBatchOutputDF)
 
+    TableMetadata.fromDf(microBatchOutputDF) match {
+      case Some(tableMeta) =>
+        upsertToDelta(microBatchOutputDF,
+                      schemaEvolutionStrategy,
+                      path,
+                      tableMeta)
+      case None =>
+        log.debug(s"empty batch for path $path - skipping")
+    }
+  }
+
+  def upsertToDelta(
+      microBatchOutputDF: DataFrame,
+      schemaEvolutionStrategy: SchemaEvolutionStrategy,
+      path: String,
+      tableMetadata: TableMetadata)(implicit ss: SparkSession): Unit = {
     val targetTableName =
       TableNameFormatter.targetTableName(tableMetadata.table)
 
-    val latestChangeForEachKey: DataFrame = getLatestRow(microBatchOutputDF)
+    val targetTablePath = s"$path/$targetTableName"
+
+    val latestChangeForEachKey: DataFrame =
+      getLatestRow(microBatchOutputDF, tableMetadata)
 
     /** First update the schema of the target table */
-    val targetTable = DeltaSchemaMigration.updateSchema(
+    val targetTable = DeltaSchemaMigration.createOrUpdateSchema(
       targetTableName,
-      path,
+      targetTablePath,
       tableMetadata,
-      schemaEvolutionStrategy
+      schemaEvolutionStrategy,
+      ss
     )
 
     val updateExp = buildUpdateExp(tableMetadata, SrcTableAlias)
@@ -54,8 +70,8 @@ object MergeQueries {
     val timestampCompareExp =
       buildTimestampCompareSql(tableMetadata, TargetTableAlias, SrcTableAlias)
 
-//    val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
-//    val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
+    //    val isDeleteExp = "s.source_metadata.change_type = 'DELETE'"
+    //    val isNotDeleteExp = "s.source_metadata.change_type != 'DELETE'"
 
     val isDeleteExp = "s.source_metadata.is_deleted = true"
     val isNotDeleteExp = "s.source_metadata.is_deleted = false"
@@ -67,14 +83,6 @@ object MergeQueries {
          | isNotDeleteExp: ${isNotDeleteExp}
          | """.stripMargin
     )
-
-    log.info(s"$targetTableName update expr: " + updateExp)
-
-    log.info(s"$targetTableName payload schema")
-    tableMetadata.payloadSchema.printTreeString()
-
-    log.info(s"$targetTableName: target table schema")
-    targetTable.toDF.printSchema()
 
     targetTable
       .as(TargetTableAlias)
@@ -93,8 +101,8 @@ object MergeQueries {
       .execute()
   }
 
-  private def getLatestRow(df: DataFrame)(
-      implicit tableMetadata: TableMetadata): DataFrame = {
+  private def getLatestRow(df: DataFrame,
+                           tableMetadata: TableMetadata): DataFrame = {
     val pKeys = tableMetadata.payloadPrimaryKeyFields.map(payloadField)
 
     // TODO: handle deleted field

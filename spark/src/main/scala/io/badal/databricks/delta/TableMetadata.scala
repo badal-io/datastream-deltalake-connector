@@ -37,7 +37,6 @@ object TableMetadata {
   def fromDf(df: DataFrame): Option[TableMetadata] = {
     import org.apache.spark.sql.functions._
 
-    df.show(100)
     df.select(
         col("read_method").as("read_method"),
         col("source_metadata.table").as("table"),

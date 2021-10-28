@@ -44,6 +44,10 @@ After a couple of minutes you should see files being writen ![alt text]( docs/im
 
 ### Setup Databricks on GCP
 
+* https://docs.gcp.databricks.com/getting-started/try-databricks-gcp.html
+* Configure a Databricks cluster with a GCP service account: https://docs.gcp.databricks.com/clusters/configure.html#google-service-account
+    * The service account should have read permission to the GCS bucket used by Datastream 
+
 ### Deploy Connector on Databricks 
 
 * Deploy a new Databricks cluster with environment variables.

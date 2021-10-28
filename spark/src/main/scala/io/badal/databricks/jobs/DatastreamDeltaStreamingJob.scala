@@ -26,7 +26,7 @@ object DatastreamDeltaStreamingJob {
 
     /** Create a spark session */
     val spark = SparkSession.builder
-      .appName("DatastreamReader")
+      .appName(jobConf.datastream.name.value)
       .config("spark.sql.streaming.schemaInference", "true")
       .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
       .config("spark.sql.catalog.spark_catalog",

@@ -80,6 +80,10 @@ May need to set your project configuration to the relevant one also,
 
 `gcloud config set project sandbox-databricks`
 
+## Running Tests
+
+`sbt test`
+
 ## Configuration
 
 Configuration of the connector is achieved through a series of environment variables
@@ -99,7 +103,35 @@ Configuration of the connector is achieved through a series of environment varia
 | DELTA_SCHEMA_EVOLUTION_STRATEGY | The strategy for dealing with schema changes. There are currently three types: <br> `mergeSchema` - attempts to use delta's pre-defined merge strategy <br> `overwriteSchema` - uses delta's overwrite schema option (will break backwards compatibility) <br> `none` - no strategy will be applied and schema changes will cause failures <br><br> https://databricks.com/blog/2019/09/24/diving-into-delta-lake-schema-enforcement-evolution.html | mergeSchema | no
 | DELTA_TABLE_PATH | The location of the delta table data / log | dbfs:/_delta | no
 
+## Connector Design
+The connector is modeled after the official [Datastream Dataflow connector](https://github.com/GoogleCloudPlatform/DataflowTemplates/tree/master/v2/datastream-to-bigquery)
+
+The ingestion can be divided into several phases
+1) Table discovery
+    * The Datastream root directory is scanned to discover all sub-folder. Each subfolder contains a separate table.
+    * Currently, this stage runs only once when the job stars - it will not pick up and new tables that are added while the job runs
+2) Stream creation per table
+    * For each table/sub-folder a new stream is created
+    * The [TableMetadata](spark/src/main/scala/io/badal/databricks/delta/TableMetadata.scala) is extracted by reading the first record from the stream
+    * A new Database and tables are created if they don't already exist 
+3) Ingestion into log tables
+    * The stream is written (in append mode) as is into an intermediate log table 
+    * The log table has a row for each record in the source GCS files
+4) Merge from logs tables into final tables 
+    * The log tables is used as a [Delta streaming source](https://docs.databricks.com/delta/delta-streaming.html#delta-table-as-a-sink). 
+    * For each micro-batch we 
+        * Migrate the schema of the target table. This is done by appending an empty Dataframe with the new schema. [code](spark/src/main/scala/io/badal/databricks/delta/DeltaSchemaMigration.scala)
+        * Executing a Delta [merge command](https://docs.databricks.com/spark/latest/spark-sql/language-manual/delta-merge-into.htm) into the target table. [code](spark/src/main/scala/io/badal/databricks/delta/MergeQueries.scala)  
+
+Recovery from failure is supported using [checkpointing](https://docs.databricks.com/spark/latest/structured-streaming/production.html#enable-checkpointing)
+
 ## Limitations
 1) Updating primary key columns has not been tested
 2) source_metadata.is_deleted column is used to detect deletes, while the change_type column is ignored (similar to the Dataflow implimentation)
 3) New Datastream tables are not auto-discovered. Ingesting newly added tables requires restating the connector
+
+## Improvements to be made 
+1) Add custom metrics for better monitoring
+2) Discover new tables that were added while the job is running
+3) Provide instructions on how to setup the jobs to [restart on failure](https://docs.databricks.com/spark/latest/structured-streaming/production.html#configure-jobs-to-restart-streaming-queries-on-failure) 
+4) Better error recovery in case of one a single stream failing (i.e it should not affect other streams)

@@ -7,9 +7,9 @@ from multiprocessing import Process, Value
 
 import os
 import pymysql
-from models import Voter, Poll, init_db
+from models import User, Order, init_db
 import logging
-POSSIBLE_ACTIONS = ("insert", "update", "answer_poll", "delete_voter", "delete_poll")
+POSSIBLE_ACTIONS = ("insert_user", "update_user", "insert_order", "delete_user", "delete_order")
 
 app = Flask(__name__)
 
@@ -45,54 +45,54 @@ def execution_loop():
     while True:
         action = choice(POSSIBLE_ACTIONS)
         print('Action: '  + action)  # will not print anything
-        if action == "insert":
-            insert_fake_voter()
-        elif action == "update":
-            update_random_voter()
-        elif action == "answer_poll":
-            answer_random_poll()
-        elif action == "delete_voter" and choice(POSSIBLE_ACTIONS) == "delete_voter":
-            delete_random_voter()
-        elif action == "delete_poll" and choice(POSSIBLE_ACTIONS) == "delete_poll":
-            delete_random_poll()
+        if action == "insert_user":
+            insert_user()
+        elif action == "update_user":
+            update_user()
+        elif action == "insert_order":
+            add_order()
+        elif action == "delete_user" and choice(POSSIBLE_ACTIONS) == "delete_user":
+            delete_user()
+        elif action == "delete_order" and choice(POSSIBLE_ACTIONS) == "delete_order":
+            delete_order()
         sleep(0.5)
 
 def random_gender():
-    return choice(('m','f','t','n'))
+    return choice(('m','f','n'))
 
-def insert_fake_voter():
+def insert_user():
     faker = Faker()
-    Voter(
+    User(
         id=str(random_with_N_digits(9)),
         name=faker.name(),
         address=faker.address(),
         gender=random_gender(),
     ).create()
 
-def update_random_voter():
-    voter = Voter.random()
-    if voter is not None:
+def update_user():
+    user = User.random()
+    if user is not None:
         if choice((True, False)):
-            voter.gender = random_gender()
-        voter.save()
+            user.gender = random_gender()
+        user.save()
 
-def delete_random_voter():
-    voter = Voter.random()
-    if voter is not None:
-        voter.delete()
+def delete_user():
+    user = User.random()
+    if user is not None:
+        user.delete()
 
-def answer_random_poll():
-    voter = Voter.random()
-    if voter is not None:
-        Poll(
-            voter_id=voter.id,
-            answer=choice(("Bibi", "Gantz", "Benet", "Emet", "Meshutefet", "Shas"))
+def add_order():
+    order = Order.random()
+    if order is not None:
+        Order(
+            user_id=User.id,
+            product=choice(("Table", "Chair", "Book", "Laptop", "Keyboard"))
         ).create()
 
-def delete_random_poll():
-    poll = Poll.random()
-    if poll is not None:
-        poll.delete()
+def delete_order():
+    order = Order.random()
+    if order is not None:
+        order.delete()
 
 if __name__ == '__main__':
     p = Process(target=execution_loop)

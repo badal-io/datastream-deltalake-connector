@@ -10,7 +10,15 @@ A Delta Lake connector for GCP [Datastream](https://cloud.google.com/datastream)
 
 Currently Datastream streams changes to files in Google Cloud Storage (GCS). The Delta Lake connector streams those files and writes the changes to Delta Lake in two forms
 1. Change Log tables - contain every single change that was made in the source database since the replication started. Can be replayed to rebuild the state of the database in any given point in the past.
+
+![alt text]( docs/images/log_table.png "Example Log Table")
+
+
 2. Merged tables - contain the most recent snapshot of the database.
+
+![alt text]( docs/images/merge_table.png "Example Merge Table")
+
+The overall architecture is as follows,
 
 ![alt text]( docs/images/Datastream_Databricks.png "Architecture")
  

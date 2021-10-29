@@ -9,3 +9,5 @@ target
 
 spark/spark-warehouse/*
 spark-warehouse/*
+
+*__pycache__

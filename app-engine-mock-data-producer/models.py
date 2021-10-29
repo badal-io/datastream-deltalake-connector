@@ -63,18 +63,18 @@ class Basic():
         db_session.commit()
 
 
-class Voter(Base, Basic):
-    __tablename__ = 'inventory.voters'
+class User(Base, Basic):
+    __tablename__ = 'inventory.users'
     id = Column(String(9), primary_key=True)
     name = Column(String(50))
     address = Column(String(100))
     gender = Column(String(50))
 
 
-class Poll(Base, Basic):
-    __tablename__ = 'inventory.polls'
+class Order(Base, Basic):
+    __tablename__ = 'inventory.orders'
     id = Column('id', Integer, primary_key=True, autoincrement=True)
-    voter_id = Column(String(9))
-    answer = Column(String(50))
+    user_id = Column(String(9))
+    product = Column(String(50))
     created_at = Column(DateTime(), default=datetime.now)
 

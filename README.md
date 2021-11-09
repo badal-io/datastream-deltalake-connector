@@ -33,7 +33,7 @@ In this guide we will be using Databricks.
 
 ### Building Fat Jar for the Spark connector
 
-`sbt "project spark-connector" clean assembly`
+`sbt "project spark" clean assembly`
 
 ## Getting Started
 

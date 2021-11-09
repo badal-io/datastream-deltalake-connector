@@ -1,10 +1,13 @@
 package io.badal.databricks.datastream
 
+import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{DeltaSchemaMigration, TableMetadata}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
+
+import scala.util.{Failure, Success, Try}
 
 /**
   * Helper class to read Datastream files and return them as a DataFrame
@@ -16,15 +19,40 @@ object DatastreamIO {
 
   val logger = Logger.getLogger(DatastreamIO.getClass)
 
+  def readTableMetadata(
+      datastreamTable: DatastreamTable,
+      jobConf: DatastreamDeltaConf,
+      spark: SparkSession
+  ): Try[TableMetadata] = {
+    val paths = filePaths(datastreamTable.tablePath)
+
+    logger.info(
+      s"reading table metadata for Datastream table source located at $paths")
+
+    val inputDf = spark.read
+      .format(jobConf.datastream.readFormat.value)
+      .option("ignoreExtension", true)
+      .load(filePaths(datastreamTable.tablePath))
+      .limit(1)
+
+    TableMetadata.fromDf(inputDf) match {
+      case Some(tableMetadata: TableMetadata) =>
+        Success(tableMetadata)
+      case None =>
+        Failure(new RuntimeException(
+          s"Failed to retrieve table metadata for table ${datastreamTable.table} at $paths"))
+    }
+  }
+
   def readStreamFor(datastreamTable: DatastreamTable,
+                    tableMetadata: TableMetadata,
                     jobConf: DatastreamDeltaConf,
-                    spark: SparkSession): Option[(DataFrame, TableMetadata)] = {
+                    spark: SparkSession): DataFrame = {
 
     /**
       * Generates an intermediate delta table containing raw cdc events
       */
-    def logTableStreamFrom(df: DataFrame,
-                           tableMetadata: TableMetadata): DataFrame = {
+    def logTableStreamFrom(df: DataFrame): DataFrame = {
 
       val logTableName = tableMetadata.table.fullLogTableName
       val logTablePath = s"${jobConf.deltalake.tablePath}/$logTableName"
@@ -33,8 +61,9 @@ object DatastreamIO {
 
       // Create the table if it doesn't exist
       DeltaSchemaMigration.createOrUpdateSchema(
+        logTableName,
         jobConf.deltalake.tablePath,
-        tableMetadata,
+        df.schema,
         jobConf.deltalake.schemaEvolution,
         spark
       )
@@ -44,6 +73,7 @@ object DatastreamIO {
         .option("checkpointLocation", s"${jobConf.checkpointDir}/$logTableName")
         .format("delta")
         .outputMode("append")
+        .queryName(s"${logTableName}_write")
         .start(logTablePath)
 
       spark.readStream
@@ -63,19 +93,10 @@ object DatastreamIO {
               jobConf.datastream.fileReadConcurrency.value)
       .load(filePaths(datastreamTable.tablePath))
 
-    TableMetadata.fromDf(streamingInputDf) match {
-      case Some(tableMetadata) =>
-        if (jobConf.generateLogTable) {
-          Some(logTableStreamFrom(streamingInputDf, tableMetadata),
-               tableMetadata)
-        } else {
-          Some(streamingInputDf, tableMetadata)
-        }
-      case None =>
-        log.error(
-          s"empty folder ${datastreamTable.tablePath} " +
-            s" for table ${datastreamTable} - skipping log table creation")
-        None
+    if (jobConf.generateLogTable) {
+      logTableStreamFrom(streamingInputDf)
+    } else {
+      streamingInputDf
     }
   }
 

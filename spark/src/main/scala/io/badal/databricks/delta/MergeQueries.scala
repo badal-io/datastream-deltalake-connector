@@ -55,6 +55,7 @@ object MergeQueries {
 
     /** First update the schema of the target table */
     val targetTable = DeltaSchemaMigration.createOrUpdateSchema(
+      tableMetadata.table.fullTargetTableName,
       path,
       tableMetadata,
       schemaEvolutionStrategy,

@@ -22,10 +22,13 @@ class DeltaSchemaMigrationSpec
 
       val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
-      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
-                                                tableMetadata,
-                                                Merge,
-                                                spark)
+      DeltaSchemaMigration.createOrUpdateSchema(
+        tableMetadata.table.fullTargetTableName,
+        tempPath,
+        tableMetadata,
+        Merge,
+        spark)
+
       MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
       val targetSchema = new StructType(
@@ -57,10 +60,12 @@ class DeltaSchemaMigrationSpec
 
       val tableMetadata = TableMetadata.fromDfUnsafe(sourceDf)
 
-      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
-                                                tableMetadata,
-                                                Merge,
-                                                spark)
+      DeltaSchemaMigration.createOrUpdateSchema(
+        tableMetadata.table.fullTargetTableName,
+        tempPath,
+        tableMetadata,
+        Merge,
+        spark)
 
       MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 
@@ -69,10 +74,13 @@ class DeltaSchemaMigrationSpec
           tableMetadata.payloadSchema.add("newField1", LongType, false)
       )
 
-      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
-                                                tableMetadataNew,
-                                                Merge,
-                                                spark)
+      DeltaSchemaMigration.createOrUpdateSchema(
+        tableMetadataNew.table.fullTargetTableName,
+        tempPath,
+        tableMetadataNew,
+        Merge,
+        spark
+      )
 
       val targetSchema = new StructType(
         Array(
@@ -111,10 +119,12 @@ class DeltaSchemaMigrationSpec
           tableMetadata.payloadSchema.add("testColumn", LongType, false)
       )
 
-      DeltaSchemaMigration.createOrUpdateSchema(tempPath,
-                                                tableMetadataWithExtraColumn,
-                                                Merge,
-                                                spark)
+      DeltaSchemaMigration.createOrUpdateSchema(
+        tableMetadataWithExtraColumn.table.fullTargetTableName,
+        tempPath,
+        tableMetadataWithExtraColumn,
+        Merge,
+        spark)
 
       MergeQueries.upsertToDelta(sourceDf, Merge, tempPath)
 

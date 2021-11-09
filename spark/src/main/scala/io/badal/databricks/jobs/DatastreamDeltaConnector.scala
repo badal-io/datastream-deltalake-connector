@@ -6,10 +6,13 @@ import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{
   DatastreamDeltaTable,
   DeltaSchemaMigration,
-  MergeQueries
+  MergeQueries,
+  TableMetadata
 }
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
+
+import scala.util.{Failure, Success}
 
 object DatastreamDeltaConnector {
 
@@ -30,12 +33,19 @@ object DatastreamDeltaConnector {
       logger.info(
         s"defining stream for datastream table defined at ${datastreamTable.tablePath}")
 
-      /** Get a streaming Dataframe of Datastream records */
-      DatastreamIO.readStreamFor(datastreamTable, jobConf, spark) match {
-        case Some((inputDf, tableMetadata)) =>
+      DatastreamIO.readTableMetadata(datastreamTable, jobConf, spark) match {
+        case Success(tableMetadata: TableMetadata) =>
           /** Make sure Database exists */
-          DeltaSchemaMigration.createDBIfNotExist(tableMetadata.table,
+          DeltaSchemaMigration.createDBIfNotExist(
+            tableMetadata.table,
             jobConf.deltalake.tablePath.value)(spark)
+
+          /** Get a streaming Dataframe of Datastream records */
+          val inputDf = DatastreamIO.readStreamFor(datastreamTable,
+                                                   tableMetadata,
+                                                   jobConf,
+                                                   spark)
+
           /** Merge into target table */
           inputDf.writeStream
             .format("delta")
@@ -51,14 +61,13 @@ object DatastreamDeltaConnector {
               )
             }
             .outputMode("update")
+            .queryName(s"${tableMetadata.table.fullTargetTableName}_write")
             .start()
-        case None =>
+        case Failure(_) =>
           log.error(
             s"empty folder ${datastreamTable.tablePath} " +
-              s" for table ${datastreamTable} - could not start")
+              s" for table $datastreamTable - could not start")
       }
-
-      spark.streams.awaitAnyTermination()
     }
   }
 

@@ -35,6 +35,8 @@ object DatastreamDeltaStreamingJob {
       .getOrCreate()
 
     DatastreamDeltaConnector.run(spark, jobConf)
+
+    spark.streams.awaitAnyTermination()
   }
 
 }

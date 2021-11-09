@@ -24,7 +24,8 @@ object DeltaSchemaMigration {
   /** Update Table schema.
     * Simplest way to do this is to append and empty dataframe to the table with mergeSchema=true
     * */
-  def createOrUpdateSchema(basePath: NonEmptyString,
+  def createOrUpdateSchema(table: String,
+                           basePath: NonEmptyString,
                            tableMetadata: TableMetadata,
                            schemaEvolutionStrategy: SchemaEvolutionStrategy,
                            spark: SparkSession): DeltaTable = {
@@ -35,32 +36,34 @@ object DeltaSchemaMigration {
     // function below for another way of doing this
     val schema = buildTargetSchema(tableMetadata)
 
-    createOrUpdateSchema(tableMetadata.table,
+    createOrUpdateSchema(table,
                          basePath,
                          schema,
                          schemaEvolutionStrategy,
                          spark)
   }
 
-  private def createOrUpdateSchema(
-      table: DatastreamDeltaTable,
-      path: NonEmptyString,
-      schema: StructType,
-      schemaEvolutionStrategy: SchemaEvolutionStrategy,
-      spark: SparkSession): DeltaTable = {
+  def createOrUpdateSchema(table: String,
+                           path: NonEmptyString,
+                           schema: StructType,
+                           schemaEvolutionStrategy: SchemaEvolutionStrategy,
+                           spark: SparkSession): DeltaTable = {
     val emptyDF =
       spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
 
-    log.info(s"Target schema for table at path $path is  $schema")
+    val tablePath = s"${path.value}/$table"
+
+    log.info(
+      s"Create / Update Schema for table=$table, path=$tablePath, with schema=$schema")
 
     emptyDF.write
       .option(schemaEvolutionStrategy)
-      .option("path", path.value)
+      .option("path", tablePath)
       .format("delta")
       .mode(SaveMode.Append)
-      .saveAsTable(table.fullTargetTableName)
+      .saveAsTable(table)
 
-    DeltaTable.forName(table.fullTargetTableName)
+    DeltaTable.forName(table)
   }
 
   /** Append Metadata fields */

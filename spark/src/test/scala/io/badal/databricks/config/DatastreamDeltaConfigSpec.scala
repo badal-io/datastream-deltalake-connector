@@ -3,11 +3,6 @@ package io.badal.databricks.config
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.SchemaEvolutionStrategy.Merge
-import io.badal.databricks.config.{
-  DatastreamConf,
-  DatastreamDeltaConf,
-  DeltalakeConf,
-}
 import io.badal.databricks.datastream.DiscoveryBucket
 import org.scalatest.EitherValues._
 import org.scalatest.flatspec.AnyFlatSpec

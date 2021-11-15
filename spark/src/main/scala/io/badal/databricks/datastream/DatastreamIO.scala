@@ -5,8 +5,12 @@ import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{DeltaSchemaMigration, TableMetadata}
 import org.apache.log4j.Logger
+import org.apache.parquet.format.LogicalTypes.TimeUnits
+import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -49,6 +53,8 @@ object DatastreamIO {
                     jobConf: DatastreamDeltaConf,
                     spark: SparkSession): DataFrame = {
 
+    val paths = filePaths(datastreamTable.tablePath)
+
     /**
       * Generates an intermediate delta table containing raw cdc events
       */
@@ -68,20 +74,21 @@ object DatastreamIO {
         spark
       )
 
-      df.writeStream
+      val readQuery = df.writeStream
         .option(jobConf.deltalake.schemaEvolution)
         .option("checkpointLocation", s"${jobConf.checkpointDir}/$logTableName")
         .format("delta")
         .outputMode("append")
         .queryName(s"${logTableName}_write")
+
+      jobConf.deltalake
+        .applyTrigger(readQuery)
         .start(logTablePath)
 
       spark.readStream
         .format("delta")
         .load(logTablePath)
     }
-
-    val paths = filePaths(datastreamTable.tablePath)
 
     logger.info(
       s"defining stream for Datastream table source located at $paths")

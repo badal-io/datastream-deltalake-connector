@@ -4,13 +4,13 @@ import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.datastream.DatastreamIO
 import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{
-  DatastreamDeltaTable,
   DeltaSchemaMigration,
   MergeQueries,
   TableMetadata
 }
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.streaming.DataStreamWriter
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.util.{Failure, Success}
 
@@ -20,6 +20,9 @@ object DatastreamDeltaConnector {
 
   def run(spark: SparkSession, jobConf: DatastreamDeltaConf): Unit = {
     logger.info("starting...")
+
+    jobConf.deltalake.compaction.foreach(_.applyTo(spark))
+    jobConf.deltalake.optimize.foreach(_.applyTo(spark))
 
     logger.info(
       s"loading table targets using: ${jobConf.datastream.tableSource}")
@@ -41,13 +44,15 @@ object DatastreamDeltaConnector {
             jobConf.deltalake.tablePath.value)(spark)
 
           /** Get a streaming Dataframe of Datastream records */
-          val inputDf = DatastreamIO.readStreamFor(datastreamTable,
-                                                   tableMetadata,
-                                                   jobConf,
-                                                   spark)
+          val inputDf = DatastreamIO.readStreamFor(
+            datastreamTable,
+            tableMetadata,
+            jobConf,
+            spark
+          )
 
           /** Merge into target table */
-          inputDf.writeStream
+          val mergeQuery: DataStreamWriter[Row] = inputDf.writeStream
             .format("delta")
             .option(jobConf.deltalake.schemaEvolution)
             .option(
@@ -62,7 +67,11 @@ object DatastreamDeltaConnector {
             }
             .outputMode("update")
             .queryName(s"${tableMetadata.table.fullTargetTableName}_write")
+
+          jobConf.deltalake
+            .applyTrigger(mergeQuery)
             .start()
+
         case Failure(_) =>
           log.error(
             s"empty folder ${datastreamTable.tablePath} " +
@@ -70,5 +79,4 @@ object DatastreamDeltaConnector {
       }
     }
   }
-
 }

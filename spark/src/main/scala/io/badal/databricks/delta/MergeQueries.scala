@@ -75,9 +75,9 @@ object MergeQueries {
 
     log.info(
       s""" run MERGE with
-         | timestampCompareExp: ${timestampCompareExp}
-         | updateExp: ${updateExp}
-         | isNotDeleteExp: ${isNotDeleteExp}
+         | timestampCompareExp: $timestampCompareExp
+         | updateExp: $updateExp
+         | isNotDeleteExp: $isNotDeleteExp
          | """.stripMargin
     )
 

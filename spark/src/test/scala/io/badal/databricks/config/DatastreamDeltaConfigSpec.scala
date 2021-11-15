@@ -35,7 +35,8 @@ class DatastreamDeltaConfigSpec extends AnyFlatSpec with Matchers {
   val compaction = DeltalakeCompactionConf(
     autoCompactionEnabled = true,
     minNumberOfFiles = Option(PosInt.unsafeFrom(20)),
-    maxFileSizeBytes = Option(PosLong.unsafeFrom(104857600))
+    maxFileSizeBytes = Option(PosLong.unsafeFrom(104857600)),
+    targetFileSizeBytes = Option(PosLong.unsafeFrom(1048576))
   )
 
   val optimize = DeltalakeOptimizeConf(

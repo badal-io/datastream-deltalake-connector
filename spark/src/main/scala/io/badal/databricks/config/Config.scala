@@ -45,7 +45,8 @@ final case class DeltalakeConf(
 final case class DeltalakeCompactionConf(
     autoCompactionEnabled: Boolean,
     minNumberOfFiles: Option[PosInt],
-    maxFileSizeBytes: Option[PosLong]
+    maxFileSizeBytes: Option[PosLong],
+    targetFileSizeBytes: Option[PosLong]
 ) {
   import Config._
 
@@ -63,6 +64,12 @@ final case class DeltalakeCompactionConf(
       logger.info(
         s"setting $COMPACTION_MAX_FILE_SIZE = ${maxFileSizeBytesSafe.value}")
       spark.conf.set(COMPACTION_MAX_FILE_SIZE, maxFileSizeBytesSafe.value)
+    }
+
+    targetFileSizeBytes.foreach { targetFileSizeBytesSafe =>
+      logger.info(
+        s"setting $TARGET_FILE_SIZE = ${targetFileSizeBytesSafe.value}")
+      spark.conf.set(TARGET_FILE_SIZE, targetFileSizeBytesSafe.value)
     }
   }
 }
@@ -85,10 +92,12 @@ object Config {
   val logger = Logger.getLogger(Config.getClass)
 
   val AUTO_OPTIMIZE_ENABLED =
-    "setting spark.databricks.delta.optimizeWrite.enabled"
+    "spark.databricks.delta.optimizeWrite.enabled"
   val COMPACTION_AUTO_ENABLED = "spark.databricks.delta.autoCompact.enabled"
   val COMPACTION_MIN_NUM_FILES =
     "spark.databricks.delta.autoCompact.minNumFiles"
   val COMPACTION_MAX_FILE_SIZE =
     "spark.databricks.delta.autoCompact.maxFileSize"
+  val TARGET_FILE_SIZE =
+    "spark.databricks.delta.targetFileSize"
 }

@@ -13,13 +13,15 @@ object GCSOps {
 
   def list(bucketName: String, path: String): Set[String] = {
 
+    val safePath = if (path.endsWith("/") || path.isEmpty) path else s"$path/"
+
     @tailrec
     def listTailRec(acc: Set[String], page: paging.Page[Blob]): Set[String] = {
       val targets = acc ++ page.getValues.asScala
         .collect {
-          case blob if blob.getName.startsWith(path) =>
+          case blob if blob.getName.startsWith(safePath) =>
             val trimmed =
-              if (path.isEmpty) blob.getName
+              if (safePath.isEmpty) blob.getName
               else blob.getName.substring(path.length + 1)
 
             trimmed.split("/").headOption.getOrElse("")

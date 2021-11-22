@@ -1,7 +1,7 @@
 package io.badal.databricks.google
 
 import com.google.api.gax.paging
-import com.google.cloud.storage.{Blob, StorageOptions}
+import com.google.cloud.storage.Blob
 import org.apache.log4j.Logger
 
 import scala.annotation.tailrec
@@ -11,7 +11,7 @@ object GCSOps {
 
   val logger = Logger.getLogger(GCSOps.getClass)
 
-  def list(bucketName: String, path: String): Set[String] = {
+  def list(gcs: GCSClient, bucketName: String, path: String): Set[String] = {
 
     val safePath = if (path.endsWith("/") || path.isEmpty) path else s"$path/"
 
@@ -38,10 +38,9 @@ object GCSOps {
 
     logger.info(s"listing buckets at $bucketName under path $path")
 
-    val storage = StorageOptions.getDefaultInstance.getService()
-    val bucket = storage.get(bucketName)
+    val blobs = gcs.list(bucketName)
 
-    listTailRec(Set.empty, bucket.list())
+    listTailRec(Set.empty, blobs)
   }
 
 }

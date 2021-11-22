@@ -1,7 +1,7 @@
 package io.badal.databricks.datastream
 
 import eu.timepit.refined.types.string.NonEmptyString
-import io.badal.databricks.google.GCSOps
+import io.badal.databricks.google.{GCSClientImpl, GCSOps}
 import io.badal.databricks.utils.FileOps
 
 sealed trait TableProvider {
@@ -13,7 +13,7 @@ final case class DiscoveryBucket(bucket: NonEmptyString,
     extends TableProvider {
   override def list(): Seq[DatastreamTable] = {
     GCSOps
-      .list(bucket.value, path.map(_.value).getOrElse(""))
+      .list(GCSClientImpl, bucket.value, path.map(_.value).getOrElse(""))
       .toSeq
       .map { table =>
         DatastreamTable(

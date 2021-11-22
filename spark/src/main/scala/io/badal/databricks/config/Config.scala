@@ -30,7 +30,8 @@ final case class DeltalakeConf(
     schemaEvolution: SchemaEvolutionStrategy,
     tablePath: NonEmptyString,
     compaction: Option[DeltalakeCompactionConf],
-    optimize: Option[DeltalakeOptimizeConf]
+    optimize: Option[DeltalakeOptimizeConf],
+    database: Option[NonEmptyString]
 ) {
 
   def applyTrigger(writer: DataStreamWriter[Row]): DataStreamWriter[Row] =

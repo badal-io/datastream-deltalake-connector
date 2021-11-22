@@ -18,7 +18,7 @@ case class TableMetadata(sourceType: DatastreamSource,
                          orderByFields: Seq[DatastreamMetadataColumn],
                          /** ordered fields that can be used to order messages */
                          payloadSchema: StructType, /** Payload schema */
-                         payloadFields: Seq[String])
+                         payloadFields: Seq[String]) {}
 
 object TableMetadata {
   private[delta] val ORACLE_ORDER_BY_FIELDS =

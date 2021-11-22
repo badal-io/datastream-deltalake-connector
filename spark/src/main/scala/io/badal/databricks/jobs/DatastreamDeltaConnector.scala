@@ -4,6 +4,7 @@ import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.datastream.DatastreamIO
 import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{
+  DatastreamDeltaTable,
   DeltaSchemaMigration,
   MergeQueries,
   TableMetadata
@@ -37,11 +38,24 @@ object DatastreamDeltaConnector {
         s"defining stream for datastream table defined at ${datastreamTable.tablePath}")
 
       DatastreamIO.readTableMetadata(datastreamTable, jobConf, spark) match {
-        case Success(tableMetadata: TableMetadata) =>
-          /** Make sure Database exists */
-          DeltaSchemaMigration.createDBIfNotExist(
-            tableMetadata.table,
-            jobConf.deltalake.tablePath.value)(spark)
+
+        /** Override the inferred db name if its been explicitly defined in the configuration */
+        case Success(inferredTableMeta: TableMetadata) =>
+          val tableMetadata = jobConf.deltalake.database match {
+            case Some(dbOverride) =>
+              val withDbOverride: DatastreamDeltaTable = inferredTableMeta.table
+                .copy(databaseName = dbOverride.value)
+
+              inferredTableMeta.copy(table = withDbOverride)
+            case None =>
+              /** Make sure Database exists */
+              DeltaSchemaMigration.createDBIfNotExist(
+                inferredTableMeta.table,
+                jobConf.deltalake.tablePath.value
+              )(spark)
+
+              inferredTableMeta
+          }
 
           /** Get a streaming Dataframe of Datastream records */
           val inputDf = DatastreamIO.readStreamFor(

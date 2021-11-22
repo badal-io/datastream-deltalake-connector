@@ -13,6 +13,7 @@ lazy val library = new {
   val googleCloudStorage = "com.google.cloud" % "google-cloud-storage" % Versions.GoogleCloudStorgage
   val typesafeConfig = "com.typesafe" % "config" % Versions.Typesafe
   val deltaCore = "io.delta" %% "delta-core" % Versions.Delta
+  val scalaMock = "org.scalamock" %% "scalamock" % Versions.ScalaMock % "test"
   val scalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test"
   val sparkSqlTest = "org.apache.spark" %% "spark-sql" % Versions.Spark % Test classifier "tests"
   val sparkCatalystTest = "org.apache.spark" %% "spark-catalyst" % Versions.Spark % Test classifier "tests"
@@ -34,6 +35,7 @@ lazy val library = new {
   )
 
   val testDeps = Seq(
+    scalaMock,
     scalaTest,
     sparkSqlTest,
     sparkCatalystTest,

@@ -51,7 +51,8 @@ class DatastreamDeltaConfigSpec extends AnyFlatSpec with Matchers {
     tablePath = NonEmptyString.unsafeFrom("delta-table-path"),
     mergeFrequency = Option(FiniteDuration(1, TimeUnit.MINUTES)),
     compaction = Option(compaction),
-    optimize = Option(optimize)
+    optimize = Option(optimize),
+    database = Option(NonEmptyString.unsafeFrom("test-db"))
   )
 
   val validConf =

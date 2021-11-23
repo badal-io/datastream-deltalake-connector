@@ -39,7 +39,7 @@ object DatastreamIO {
       .load(filePaths(datastreamTable.tablePath))
       .limit(1)
 
-    TableMetadata.fromDf(inputDf) match {
+    TableMetadata.fromDf(inputDf, jobConf.deltalake.database.map(_.value)) match {
       case Some(tableMetadata: TableMetadata) =>
         Success(tableMetadata)
       case None =>

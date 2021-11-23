@@ -39,22 +39,11 @@ object DatastreamDeltaConnector {
 
       DatastreamIO.readTableMetadata(datastreamTable, jobConf, spark) match {
 
-        /** Override the inferred db name if its been explicitly defined in the configuration */
-        case Success(inferredTableMeta: TableMetadata) =>
-          val tableMetadata = jobConf.deltalake.database match {
-            case Some(dbOverride) =>
-              val withDbOverride: DatastreamDeltaTable = inferredTableMeta.table
-                .copy(databaseName = dbOverride.value)
-
-              inferredTableMeta.copy(table = withDbOverride)
-            case None =>
-              /** Make sure Database exists */
-              DeltaSchemaMigration.createDBIfNotExist(
-                inferredTableMeta.table,
-                jobConf.deltalake.tablePath.value
-              )(spark)
-
-              inferredTableMeta
+        case Success(tableMetadata: TableMetadata) =>
+          if (jobConf.deltalake.database.isEmpty) {
+            DeltaSchemaMigration.createDBIfNotExist(
+              tableMetadata.table,
+              jobConf.deltalake.tablePath.value)(spark)
           }
 
           /** Get a streaming Dataframe of Datastream records */
@@ -76,7 +65,8 @@ object DatastreamDeltaConnector {
               MergeQueries.upsertToDelta(
                 df,
                 jobConf.deltalake.schemaEvolution,
-                jobConf.deltalake.tablePath
+                jobConf.deltalake.tablePath,
+                jobConf.deltalake.database.map(_.value)
               )
             }
             .outputMode("update")

@@ -30,10 +30,11 @@ object MergeQueries {
     */
   def upsertToDelta(microBatchOutputDF: DataFrame,
                     schemaEvolutionStrategy: SchemaEvolutionStrategy,
-                    path: NonEmptyString): Unit = {
+                    path: NonEmptyString,
+                    dbOverride: Option[String] = None): Unit = {
     implicit val ss = microBatchOutputDF.sparkSession
 
-    TableMetadata.fromDf(microBatchOutputDF) match {
+    TableMetadata.fromDf(microBatchOutputDF, dbOverride) match {
       case Some(tableMeta) =>
         upsertToDelta(microBatchOutputDF,
                       schemaEvolutionStrategy,

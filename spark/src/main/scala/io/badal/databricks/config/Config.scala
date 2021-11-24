@@ -4,7 +4,7 @@ import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.refined.types.numeric.{PosInt, PosLong}
 import io.badal.databricks.datastream.TableProvider
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.streaming.{DataStreamWriter, Trigger}
 
 import scala.concurrent.duration.FiniteDuration
@@ -31,8 +31,14 @@ final case class DeltalakeConf(
     tablePath: NonEmptyString,
     compaction: Option[DeltalakeCompactionConf],
     optimize: Option[DeltalakeOptimizeConf],
-    database: Option[NonEmptyString]
+    database: Option[NonEmptyString],
+    microbatchPartitions: Option[PosInt]
 ) {
+
+  def applyPartitioning(df: DataFrame): DataFrame =
+    microbatchPartitions
+      .map(partitions => df.coalesce(partitions.value))
+      .getOrElse(df)
 
   def applyTrigger(writer: DataStreamWriter[Row]): DataStreamWriter[Row] =
     mergeFrequency match {

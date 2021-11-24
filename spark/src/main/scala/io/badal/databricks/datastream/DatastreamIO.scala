@@ -1,16 +1,10 @@
 package io.badal.databricks.datastream
 
-import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.DatastreamDeltaConf
-import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{DeltaSchemaMigration, TableMetadata}
 import org.apache.log4j.Logger
-import org.apache.parquet.format.LogicalTypes.TimeUnits
-import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -85,9 +79,12 @@ object DatastreamIO {
         .applyTrigger(readQuery)
         .start(logTablePath)
 
-      spark.readStream
+      val logTableStreamingDf = spark.readStream
         .format("delta")
         .load(logTablePath)
+
+      jobConf.deltalake
+        .applyPartitioning(logTableStreamingDf)
     }
 
     logger.info(
@@ -100,10 +97,12 @@ object DatastreamIO {
               jobConf.datastream.fileReadConcurrency.value)
       .load(filePaths(datastreamTable.tablePath))
 
+    val repartitioned = jobConf.deltalake.applyPartitioning(streamingInputDf)
+
     if (jobConf.generateLogTable) {
-      logTableStreamFrom(streamingInputDf)
+      logTableStreamFrom(repartitioned)
     } else {
-      streamingInputDf
+      repartitioned
     }
   }
 

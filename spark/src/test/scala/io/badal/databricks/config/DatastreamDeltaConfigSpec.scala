@@ -52,7 +52,8 @@ class DatastreamDeltaConfigSpec extends AnyFlatSpec with Matchers {
     mergeFrequency = Option(FiniteDuration(1, TimeUnit.MINUTES)),
     compaction = Option(compaction),
     optimize = Option(optimize),
-    database = Option(NonEmptyString.unsafeFrom("test-db"))
+    database = Option(NonEmptyString.unsafeFrom("test-db")),
+    microbatchPartitions = Option(PosInt.unsafeFrom(1))
   )
 
   val validConf =

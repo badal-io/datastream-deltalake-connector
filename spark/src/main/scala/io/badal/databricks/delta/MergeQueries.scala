@@ -1,7 +1,7 @@
 package io.badal.databricks.delta
 
 import eu.timepit.refined.types.string.NonEmptyString
-import io.badal.databricks.config.SchemaEvolutionStrategy
+import io.badal.databricks.config.{DeltalakeConf, SchemaEvolutionStrategy}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.expressions.Window
@@ -31,7 +31,8 @@ object MergeQueries {
   def upsertToDelta(microBatchOutputDF: DataFrame,
                     schemaEvolutionStrategy: SchemaEvolutionStrategy,
                     path: NonEmptyString,
-                    dbOverride: Option[String] = None): Unit = {
+                    dbOverride: Option[String] = None,
+                    numPartitions: Option[Int] = None): Unit = {
     implicit val ss = microBatchOutputDF.sparkSession
 
     TableMetadata.fromDf(microBatchOutputDF, dbOverride) match {
@@ -39,7 +40,8 @@ object MergeQueries {
         upsertToDelta(microBatchOutputDF,
                       schemaEvolutionStrategy,
                       path,
-                      tableMeta)
+                      tableMeta,
+                      numPartitions)
       case None =>
         log.debug(s"empty batch for path $path - skipping")
     }
@@ -49,10 +51,14 @@ object MergeQueries {
       microBatchOutputDF: DataFrame,
       schemaEvolutionStrategy: SchemaEvolutionStrategy,
       path: NonEmptyString,
-      tableMetadata: TableMetadata)(implicit ss: SparkSession): Unit = {
+      tableMetadata: TableMetadata,
+      numPartitions: Option[Int])(implicit ss: SparkSession): Unit = {
 
     val latestChangeForEachKey: DataFrame =
       getLatestRow(microBatchOutputDF, tableMetadata)
+
+    val repartitionedKeyChanges = DeltalakeConf
+      .applyPartitioning(latestChangeForEachKey, numPartitions)
 
     /** First update the schema of the target table */
     val targetTable = DeltaSchemaMigration.createOrUpdateSchema(
@@ -85,7 +91,7 @@ object MergeQueries {
     targetTable
       .as(TargetTableAlias)
       .merge(
-        latestChangeForEachKey.as(SrcTableAlias),
+        repartitionedKeyChanges.as(SrcTableAlias),
         buildJoinConditions(tableMetadata,
                             TargetTableAlias,
                             SrcPayloadTableAlias)

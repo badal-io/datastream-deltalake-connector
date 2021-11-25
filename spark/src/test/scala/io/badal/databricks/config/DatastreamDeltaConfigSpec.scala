@@ -39,11 +39,7 @@ class DatastreamDeltaConfigSpec extends AnyFlatSpec with Matchers {
     targetFileSizeBytes = Option(PosLong.unsafeFrom(1048576))
   )
 
-  val optimize = DeltalakeOptimizeConf(
-    autoOptimizeEnabled = true,
-    batchInterval = Option(PosInt.unsafeFrom(10)),
-    maxFileSizeBytes = Option(PosLong.unsafeFrom(104857600))
-  )
+  val optimize = DeltalakeOptimizeConf(autoOptimizeEnabled = true)
 
   val deltalake = DeltalakeConf(
     tableNamePrefix = "test-prefix",

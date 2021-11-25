@@ -4,7 +4,6 @@ import io.badal.databricks.config.DatastreamDeltaConf
 import io.badal.databricks.datastream.DatastreamIO
 import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{
-  DatastreamDeltaTable,
   DeltaSchemaMigration,
   MergeQueries,
   TableMetadata

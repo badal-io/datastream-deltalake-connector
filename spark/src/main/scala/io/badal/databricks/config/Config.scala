@@ -36,9 +36,7 @@ final case class DeltalakeConf(
 ) {
 
   def applyPartitioning(df: DataFrame): DataFrame =
-    microbatchPartitions
-      .map(partitions => df.coalesce(partitions.value))
-      .getOrElse(df)
+    DeltalakeConf.applyPartitioning(df, microbatchPartitions.map(_.value))
 
   def applyTrigger(writer: DataStreamWriter[Row]): DataStreamWriter[Row] =
     mergeFrequency match {
@@ -47,6 +45,13 @@ final case class DeltalakeConf(
       case None =>
         writer
     }
+}
+
+object DeltalakeConf {
+  def applyPartitioning(df: DataFrame, partitionsOpt: Option[Int]): DataFrame =
+    partitionsOpt
+      .map(partitions => df.coalesce(partitions))
+      .getOrElse(df)
 }
 
 final case class DeltalakeCompactionConf(
@@ -81,11 +86,7 @@ final case class DeltalakeCompactionConf(
   }
 }
 
-final case class DeltalakeOptimizeConf(
-    autoOptimizeEnabled: Boolean,
-    batchInterval: Option[PosInt],
-    maxFileSizeBytes: Option[PosLong]
-) {
+final case class DeltalakeOptimizeConf(autoOptimizeEnabled: Boolean) {
   import Config._
 
   def applyTo(spark: SparkSession): Unit = {

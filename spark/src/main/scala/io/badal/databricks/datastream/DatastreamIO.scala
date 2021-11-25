@@ -79,12 +79,9 @@ object DatastreamIO {
         .applyTrigger(readQuery)
         .start(logTablePath)
 
-      val logTableStreamingDf = spark.readStream
+      spark.readStream
         .format("delta")
         .load(logTablePath)
-
-      jobConf.deltalake
-        .applyPartitioning(logTableStreamingDf)
     }
 
     logger.info(

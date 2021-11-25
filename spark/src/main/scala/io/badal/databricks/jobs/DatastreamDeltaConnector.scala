@@ -65,7 +65,8 @@ object DatastreamDeltaConnector {
                 df,
                 jobConf.deltalake.schemaEvolution,
                 jobConf.deltalake.tablePath,
-                jobConf.deltalake.database.map(_.value)
+                jobConf.deltalake.database.map(_.value),
+                jobConf.deltalake.microbatchPartitions.map(_.value)
               )
             }
             .outputMode("update")

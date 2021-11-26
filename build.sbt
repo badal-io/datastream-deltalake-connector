@@ -94,7 +94,12 @@ lazy val assemblySettings = Seq(
   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
   test in assembly := {},
   assemblyShadeRules in assembly := Seq(
-    ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inAll,
+    ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inLibrary(
+      library.pureConfig,
+      library.pureConfigEnumeratum,
+      library.refined,
+      library.refinedPureConfig
+    ),
     ShadeRule.rename("com.google.common.**" -> "shadegoogle.@1").inAll,
   ),
   assemblyMergeStrategy in assembly := {

@@ -56,7 +56,7 @@ After a couple of minutes you should see files being writen ![alt text]( docs/im
 * Configure a Databricks cluster with a GCP service account: https://docs.gcp.databricks.com/clusters/configure.html#google-service-account
     * The service account should have read permission to the GCS bucket used by Datastream 
 
-### Deploy Connector on Databricks 
+### Deploy Connector on Databricks as a Job
 
 * Deploy a new Databricks cluster with environment variables.
 * Follow the instructions for building a fat jar for the connector
@@ -67,6 +67,15 @@ After a couple of minutes you should see files being writen ![alt text]( docs/im
 * Run the job
 
 ![alt text]( docs/images/job.png)
+
+### Running as a notebook
+
+We have provided a notebook which you can import, modify configurations, and run. The notebooks are in the notebooks
+directory of this project.
+
+If you need to see examples on how to configure the job programatically see `spark/src/test/scala/io/badal/databricks/config/DatastreamDeltaConfigSpec.scala`
+
+
 
 ## Running Locally 
 #### Connecting to GCP Locally
@@ -91,7 +100,7 @@ Configuration of the connector is achieved through a series of environment varia
 | Configuration | Description | Default | Required
 | --- | --- | --- | --- | 
 | GENERATE_LOG_TABLE | flag to control whether not an intermediate delta table (change log table) will be generated. The table will have the suffix `_log` | true | no
-| CHECKPOINT_DIR | Location of the structured streaming checkpoints (note should include protocol) | dbfs:/_checkpoint | no
+| CHECKPOINT_DIR | Location of the structured streaming checkpoints (note should include protocol) | dbfs:/datastream-deltalake-connector/_checkpoint | no
 | NAME | The name of the Spark application | datastream-deltalake-connector | no
 | READ_FORMAT | The file format used by datastream. <br> Currently supports only avro / parquet / json (can be used but not actually supported by datastream) | avro | no
 | FILE_READ_CONCURRENCY | The max number of files per table which can be read in a single batch | 2 | no
@@ -101,7 +110,14 @@ Configuration of the connector is achieved through a series of environment varia
 | DELTA_TABLE_NAME_PREFIX | | None | no
 | DELTA_MERGE_FREQUENCY_MINUTES | The microbatch duration of the job (how often changes will be merged into delta) | 1 | no
 | DELTA_SCHEMA_EVOLUTION_STRATEGY | The strategy for dealing with schema changes. There are currently three types: <br> `mergeSchema` - attempts to use delta's pre-defined merge strategy <br> `overwriteSchema` - uses delta's overwrite schema option (will break backwards compatibility) <br> `none` - no strategy will be applied and schema changes will cause failures <br><br> https://databricks.com/blog/2019/09/24/diving-into-delta-lake-schema-enforcement-evolution.html | mergeSchema | no
-| DELTA_TABLE_PATH | The location of the delta table data / log | dbfs:/_delta | no
+| DELTA_TABLE_PATH | The location of the delta table data / log | dbfs:/datastream-deltalake-connector/_delta | no
+| DELTA_DATABASE | An override to the database to register tables to in the catalog <br> When not provided the database is inferred from the record metadate| None | no
+| DELTA_MICROBATCH_PARTITIONS | The number of partitions in the streaming dataframe for each microbatch being processed <br> This applies both the delta log table and the merged table. This config will impact the number of parquet files which make up the delta table <br> When not provided the data will not repartitioned | None | no
+| DATABRICKS_DELTA_AUTO_COMPACTION_ENABLED | If set to true, compaction will be run on a table after every merge <br><br> This setting is only available on Databricks runtime | false | no
+| DATABRICKS_DELTA_MIN_NUMBER_OF_FILES | | None (will use databricks default) | no
+| DATABRICKS_DELTA_MAX_FILE_SIZE_BYTES | If auto compaction is enabled, this will be an upper bound to the compacted file size | None (will use databricks default) | no
+| DATABRICKS_DELTA_TARGET_FILE_SIZE_BYTES | If auto compaction is enabled, files will attempt to be compacted to roughly this size in bytes <br><br> This setting is only available on Databricks runtime | None (will use databricks default value) | no
+| DATABRICKS_DELTA_AUTO_OPTIMIZE_ENABLED | If set to true, optimize will be run on a table after every merge <br><br> This setting is only available on Databricks runtime | false | no
 
 ## Connector Design
 The connector is modeled after the official [Datastream Dataflow connector](https://github.com/GoogleCloudPlatform/DataflowTemplates/tree/master/v2/datastream-to-bigquery)
@@ -125,9 +141,27 @@ The ingestion can be divided into several phases
 
 Recovery from failure is supported using [checkpointing](https://docs.databricks.com/spark/latest/structured-streaming/production.html#enable-checkpointing)
 
+## Performance / Compaction / Optimization
+
+Bigest issues we have run into with running the connector are related Delta tables accumulating many small files.
+
+We have provided a configuration to `DELTA_MICROBATCH_PARTITIONS` which can be used to limit the number of files
+generated per microbatch.
+
+Overtime, the number of files will still grow and it is recommended to periodically perform compaction.
+
+See - [Delta Lake Best Practices](https://docs.delta.io/latest/best-practices.html)
+
+### Databricks Delta
+
+If running the connector in a Databricks runtime we have had success using the auto compaction enabled in conjunction 
+with setting target file size bytes if the default settings are not producing a good file layout for the delta tables.
+
+See - [Databricks Optimization Docs](https://docs.databricks.com/delta/optimizations/file-mgmt.html)
+
 ## Limitations
 1) Updating primary key columns has not been tested
-2) source_metadata.is_deleted column is used to detect deletes, while the change_type column is ignored (similar to the Dataflow implimentation)
+2) source_metadata.is_deleted column is used to detect deletes, while the change_type column is ignored (similar to the Dataflow implementation)
 3) New Datastream tables are not auto-discovered. Ingesting newly added tables requires restating the connector
 
 ## Improvements to be made 

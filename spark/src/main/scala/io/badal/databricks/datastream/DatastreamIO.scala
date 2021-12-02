@@ -1,8 +1,6 @@
 package io.badal.databricks.datastream
 
-import eu.timepit.refined.types.string.NonEmptyString
 import io.badal.databricks.config.DatastreamDeltaConf
-import io.badal.databricks.delta.MergeQueries.log
 import io.badal.databricks.delta.{DeltaSchemaMigration, TableMetadata}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -35,7 +33,7 @@ object DatastreamIO {
       .load(filePaths(datastreamTable.tablePath))
       .limit(1)
 
-    TableMetadata.fromDf(inputDf) match {
+    TableMetadata.fromDf(inputDf, jobConf.deltalake.database.map(_.value)) match {
       case Some(tableMetadata: TableMetadata) =>
         Success(tableMetadata)
       case None =>
@@ -48,6 +46,8 @@ object DatastreamIO {
                     tableMetadata: TableMetadata,
                     jobConf: DatastreamDeltaConf,
                     spark: SparkSession): DataFrame = {
+
+    val paths = filePaths(datastreamTable.tablePath)
 
     /**
       * Generates an intermediate delta table containing raw cdc events
@@ -68,20 +68,21 @@ object DatastreamIO {
         spark
       )
 
-      df.writeStream
+      val readQuery = df.writeStream
         .option(jobConf.deltalake.schemaEvolution)
         .option("checkpointLocation", s"${jobConf.checkpointDir}/$logTableName")
         .format("delta")
         .outputMode("append")
         .queryName(s"${logTableName}_write")
+
+      jobConf.deltalake
+        .applyTrigger(readQuery)
         .start(logTablePath)
 
       spark.readStream
         .format("delta")
         .load(logTablePath)
     }
-
-    val paths = filePaths(datastreamTable.tablePath)
 
     logger.info(
       s"defining stream for Datastream table source located at $paths")
@@ -93,10 +94,12 @@ object DatastreamIO {
               jobConf.datastream.fileReadConcurrency.value)
       .load(filePaths(datastreamTable.tablePath))
 
+    val repartitioned = jobConf.deltalake.applyPartitioning(streamingInputDf)
+
     if (jobConf.generateLogTable) {
-      logTableStreamFrom(streamingInputDf)
+      logTableStreamFrom(repartitioned)
     } else {
-      streamingInputDf
+      repartitioned
     }
   }
 

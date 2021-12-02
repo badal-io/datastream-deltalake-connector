@@ -13,6 +13,7 @@ lazy val library = new {
   val googleCloudStorage = "com.google.cloud" % "google-cloud-storage" % Versions.GoogleCloudStorgage
   val typesafeConfig = "com.typesafe" % "config" % Versions.Typesafe
   val deltaCore = "io.delta" %% "delta-core" % Versions.Delta
+  val scalaMock = "org.scalamock" %% "scalamock" % Versions.ScalaMock % "test"
   val scalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test"
   val sparkSqlTest = "org.apache.spark" %% "spark-sql" % Versions.Spark % Test classifier "tests"
   val sparkCatalystTest = "org.apache.spark" %% "spark-catalyst" % Versions.Spark % Test classifier "tests"
@@ -34,6 +35,7 @@ lazy val library = new {
   )
 
   val testDeps = Seq(
+    scalaMock,
     scalaTest,
     sparkSqlTest,
     sparkCatalystTest,
@@ -92,7 +94,12 @@ lazy val assemblySettings = Seq(
   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
   test in assembly := {},
   assemblyShadeRules in assembly := Seq(
-    ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inAll,
+    ShadeRule.rename("shapeless.**" -> "shadeshapless.@1").inLibrary(
+      library.pureConfig,
+      library.pureConfigEnumeratum,
+      library.refined,
+      library.refinedPureConfig
+    ),
     ShadeRule.rename("com.google.common.**" -> "shadegoogle.@1").inAll,
   ),
   assemblyMergeStrategy in assembly := {

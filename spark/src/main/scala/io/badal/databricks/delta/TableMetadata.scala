@@ -18,7 +18,7 @@ case class TableMetadata(sourceType: DatastreamSource,
                          orderByFields: Seq[DatastreamMetadataColumn],
                          /** ordered fields that can be used to order messages */
                          payloadSchema: StructType, /** Payload schema */
-                         payloadFields: Seq[String])
+                         payloadFields: Seq[String]) {}
 
 object TableMetadata {
   private[delta] val ORACLE_ORDER_BY_FIELDS =
@@ -34,7 +34,8 @@ object TableMetadata {
   def fromDfUnsafe(df: DataFrame): TableMetadata = fromDf(df).get
 
   /** Gets the TableMetadata by inspecting the first elements of a Dataframe */
-  def fromDf(df: DataFrame): Option[TableMetadata] = {
+  def fromDf(df: DataFrame,
+             dbOverride: Option[String] = None): Option[TableMetadata] = {
     import org.apache.spark.sql.functions._
 
     df.select(
@@ -52,7 +53,7 @@ object TableMetadata {
           getSourceTypeFromReadMethod(head.getAs[String]("read_method"))
 
         val table = head.getAs[String]("table")
-        val database = head.getAs[String]("database")
+        val database = dbOverride.getOrElse(head.getAs[String]("database"))
 
         delta.TableMetadata(
           sourceType = source,

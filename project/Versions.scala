@@ -5,6 +5,7 @@ object Versions {
   val PureConfig = "0.16.0"
   val Refined = "0.9.10"
   val Scala = "2.12.10"
+  val ScalaMock = "5.1.0"
   val ScalaTest = "3.1.1"
   val Spark = "3.1.1"
   val Typesafe = "1.4.1"
